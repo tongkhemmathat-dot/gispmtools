@@ -59,6 +59,11 @@ function Import-PMJson {
 function Initialize-PMCore {
     param([Parameter(Mandatory)][string]$ConfigDir)
 
+    # Remembered so anything loaded later can find its own config without the
+    # caller having to thread the path through - Lib\ArcGIS.ps1 stores the
+    # saved connection beside settings.json.
+    $Script:PMConfigDir = $ConfigDir
+
     $Script:PMConfig = Import-PMJson -Path (Join-Path $ConfigDir 'settings.json')
 
     $i18n = Import-PMJson -Path (Join-Path $ConfigDir 'i18n.json')
@@ -77,6 +82,9 @@ function Initialize-PMCore {
 }
 
 function Get-PMConfig { return $Script:PMConfig }
+
+$Script:PMConfigDir = $null
+function Get-PMConfigDir { return $Script:PMConfigDir }
 
 # Set by the orchestrator so checks can find sibling data - the TREND check
 # reads the sample files Start-PMMonitor.ps1 leaves under Output\_Perf.

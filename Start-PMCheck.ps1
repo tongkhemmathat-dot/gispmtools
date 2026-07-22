@@ -64,6 +64,10 @@ if ([string]::IsNullOrWhiteSpace($ConfigDir))  { $ConfigDir  = Join-Path $PMRoot
 # --- load the shared contract and the renderer ------------------------------
 . (Join-Path $PMRoot 'Lib\Core.ps1')
 . (Join-Path $PMRoot 'Lib\Report.Html.ps1')
+# Needed by the Checks\A*-ArcGIS*.ps1 checks. Loaded unconditionally because
+# a check file is dot-sourced before anything knows whether it will run, and
+# this file only defines functions - it opens no connection by itself.
+. (Join-Path $PMRoot 'Lib\ArcGIS.ps1')
 
 Initialize-PMCore -ConfigDir $ConfigDir
 Set-PMOutputRoot -Path $OutputRoot

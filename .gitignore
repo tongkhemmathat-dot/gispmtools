@@ -9,5 +9,11 @@ Output/
 # changes wholesale on every build, so committing it would bury real diffs.
 Dist/
 
+# Saved ArcGIS Server connection. Normally lives under %LOCALAPPDATA%\PMtools
+# and never appears here at all, but the path is overridable for testing and
+# a stray copy must not be committable: it holds a site URL, an account name
+# and a DPAPI-encrypted password.
+**/arcgis-connection.xml
+
 # Machine-local editor and tooling state.
 .claude/settings.local.json

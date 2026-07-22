@@ -270,5 +270,19 @@
   "reboot.item.netlogon":  { "th": "การเปลี่ยนชื่อเครื่องหรือเข้าร่วมโดเมน", "en": "Computer Rename / Domain Join" },
   "reboot.value.pending":  { "th": "รอเริ่มระบบใหม่", "en": "Restart pending" },
   "reboot.value.clear":    { "th": "ไม่มีรายการค้าง", "en": "Clear" },
-  "reboot.finding.pending":{ "th": "ระบบมีรายการที่รอการเริ่มเครื่องใหม่ ({0}) การปรับปรุงบางรายการจะยังไม่มีผลจนกว่าจะเริ่มระบบใหม่ ควรวางแผนเริ่มระบบใหม่ในช่วงเวลาที่กระทบผู้ใช้งานน้อยที่สุด", "en": "A restart is pending ({0}). Some updates will not take effect until the server is restarted. Schedule a restart during a low-impact window." }
+  "reboot.finding.pending":{ "th": "ระบบมีรายการที่รอการเริ่มเครื่องใหม่ ({0}) การปรับปรุงบางรายการจะยังไม่มีผลจนกว่าจะเริ่มระบบใหม่ ควรวางแผนเริ่มระบบใหม่ในช่วงเวลาที่กระทบผู้ใช้งานน้อยที่สุด", "en": "A restart is pending ({0}). Some updates will not take effect until the server is restarted. Schedule a restart during a low-impact window." },
+
+  "_agsNote": "หัวข้อ ArcGIS Server ต้องตั้งค่าการเชื่อมต่อก่อนใช้งาน (เมนูหลัก -> ArcGIS Server connection) และปิดไว้เป็นค่าเริ่มต้นเพราะติดต่อออกนอกเครื่อง",
+  "ags.title":             { "th": "สถานะไซต์ ArcGIS Server", "en": "ArcGIS Server Site Status" },
+  "ags.summary.ok":        { "th": "ไซต์ ArcGIS Server เวอร์ชัน {0} ทำงานปกติ เครื่องในไซต์ {1} เครื่อง", "en": "ArcGIS Server {0} site is healthy across {1} machine(s)." },
+  "ags.summary.issue":     { "th": "ตรวจเครื่องในไซต์ {0} เครื่อง พบที่ไม่ทำงาน {1} เครื่อง", "en": "{0} machine(s) assessed. {1} are not running." },
+  "ags.summary.partial":   { "th": "เชื่อมต่อไซต์ ArcGIS Server เวอร์ชัน {0} ได้ แต่บัญชีที่ใช้ไม่มีสิทธิ์อ่านข้อมูลบางส่วน", "en": "Connected to ArcGIS Server {0}, but the account cannot read every resource." },
+  "ags.item.url":          { "th": "ที่อยู่ไซต์", "en": "Site URL" },
+  "ags.item.user":         { "th": "บัญชีที่ใช้เชื่อมต่อ", "en": "Connected As" },
+  "ags.item.version":      { "th": "เวอร์ชัน", "en": "Version" },
+  "ags.item.build":        { "th": "หมายเลขบิลด์", "en": "Build" },
+  "ags.machine.started":   { "th": "ทำงานปกติ", "en": "Started" },
+  "ags.machine.stopped":   { "th": "ไม่ทำงาน", "en": "Stopped" },
+  "ags.finding.machineStopped": { "th": "เครื่อง \"{0}\" ในไซต์ ArcGIS Server ไม่ได้ทำงานอยู่ บริการแผนที่ที่อาศัยเครื่องนี้จะให้บริการไม่ได้หรือรับภาระงานได้น้อยลง ควรตรวจสอบสถานะเครื่องและบริการ ArcGIS Server บนเครื่องนั้น", "en": "Machine \"{0}\" in the ArcGIS Server site is not running. Services relying on it will be unavailable or have reduced capacity. Check the machine and the ArcGIS Server service on it." },
+  "ags.finding.noMachineAccess": { "th": "เชื่อมต่อไซต์ได้ แต่อ่านรายการเครื่องในไซต์ไม่ได้ ({0}) หากใช้บัญชีที่จำกัดสิทธิ์ ควรตรวจสอบว่าบัญชีมีสิทธิ์อ่านข้อมูลระบบเพียงพอ", "en": "Signed in successfully but could not list the site machines ({0}). If a restricted account is used, confirm it has enough privilege to read system resources." }
 }

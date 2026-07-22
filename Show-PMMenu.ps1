@@ -35,6 +35,7 @@ if ([string]::IsNullOrWhiteSpace($OutputRoot)) { $OutputRoot = Join-Path $PMRoot
 if ([string]::IsNullOrWhiteSpace($ConfigDir))  { $ConfigDir  = Join-Path $PMRoot 'Config' }
 
 . (Join-Path $PMRoot 'Lib\Core.ps1')
+. (Join-Path $PMRoot 'Lib\ArcGIS.ps1')
 Initialize-PMCore -ConfigDir $ConfigDir
 
 $defaultMinutes = [int](Get-PMSetting -Path 'Monitor.DefaultMinutes'  -Default 30)
@@ -87,11 +88,211 @@ function Read-PMCustomMinutes {
     }
 }
 
+# ---------------------------------------------------------------------
+# ArcGIS Server connection
+#   English/ASCII like the rest of this menu - the Windows Server console
+#   has no Thai glyphs. See the note at the top of this file.
+# ---------------------------------------------------------------------
+
+function Show-PMArcGISStatus {
+    try { $conn = Get-PMArcGISConnection }
+    catch {
+        Write-Host '  Saved connection: ' -NoNewline
+        Write-Host 'unreadable' -ForegroundColor Red
+        Write-Host ('    ' + $_.Exception.Message) -ForegroundColor DarkGray
+        return
+    }
+
+    Write-Host '  Saved connection: ' -NoNewline
+    if ($null -eq $conn) {
+        Write-Host 'none' -ForegroundColor Yellow
+        Write-Host '    The ArcGIS checks stay skipped until one is set.' -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host $conn.Url -ForegroundColor Green
+        Write-Host ("    user {0}, saved {1} by {2}" -f $conn.Username, $conn.SavedAt, $conn.SavedBy) -ForegroundColor DarkGray
+    }
+}
+
+function Read-PMArcGISUrl {
+    Write-Host ''
+    Write-Host '  ArcGIS Server site URL' -ForegroundColor Cyan
+    Write-Host '  Enter the site address WITHOUT the /admin part - examples:' -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '    https://gis.example.go.th/server' -ForegroundColor Gray -NoNewline
+    Write-Host '          through a Web Adaptor (most common)' -ForegroundColor DarkGray
+    Write-Host '    https://gisserver.example.go.th:6443' -ForegroundColor Gray -NoNewline
+    Write-Host '      straight to the server' -ForegroundColor DarkGray
+    Write-Host '    https://localhost:6443' -ForegroundColor Gray -NoNewline
+    Write-Host '                    when running on the server itself' -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '  A trailing /admin is accepted and removed for you.' -ForegroundColor DarkGray
+    Write-Host ''
+
+    $raw = Read-Host '  Site URL (blank to cancel)'
+    if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
+
+    try { return Get-PMArcGISRoot -Url $raw }
+    catch {
+        Write-Host ('  ' + $_.Exception.Message) -ForegroundColor Yellow
+        return $null
+    }
+}
+
+function Set-PMArcGISConnectionInteractive {
+    $url = Read-PMArcGISUrl
+    if ($null -eq $url) { return }
+
+    Write-Host ''
+    Write-Host ('  Resolved to: {0}' -f $url) -ForegroundColor Green
+    Write-Host ('  Admin API  : {0}/admin' -f $url) -ForegroundColor DarkGray
+
+    Write-Host ''
+    Write-Host '  Account' -ForegroundColor Cyan
+    Write-Host '  Use an ArcGIS Server account that can READ the site. Examples:' -ForegroundColor DarkGray
+    Write-Host '    siteadmin              built-in primary site administrator' -ForegroundColor Gray
+    Write-Host '    pmreader               a dedicated read-only account (preferred)' -ForegroundColor Gray
+    Write-Host '    DOMAIN\gis_monitor     when the site uses Windows accounts' -ForegroundColor Gray
+    Write-Host ''
+    Write-Host '  PMtools only ever reads. A least-privilege account is enough and' -ForegroundColor DarkGray
+    Write-Host '  is safer than the primary site administrator.' -ForegroundColor DarkGray
+    Write-Host ''
+
+    $user = Read-Host '  Username (blank to cancel)'
+    if ([string]::IsNullOrWhiteSpace($user)) { return }
+
+    Write-Host ''
+    Write-Host '  The password is not shown as you type.' -ForegroundColor DarkGray
+    $pass = Read-Host '  Password' -AsSecureString
+    if ($null -eq $pass -or $pass.Length -eq 0) {
+        Write-Host '  Cancelled - no password entered.' -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host ''
+    Write-Host '  Testing the connection...' -ForegroundColor DarkGray
+    $test = Test-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass
+
+    Write-Host ''
+    if (-not $test.Success) {
+        Write-Host '  Connection FAILED' -ForegroundColor Red
+        Write-Host ('    ' + $test.Message) -ForegroundColor Yellow
+        Write-Host ''
+        $anyway = Read-Host '  Save it anyway? (y/N)'
+        if ($anyway.Trim().ToUpper() -ne 'Y') {
+            Write-Host '  Not saved.' -ForegroundColor Yellow
+            return
+        }
+    }
+    else {
+        Write-Host '  Connection OK' -ForegroundColor Green
+        if ($test.Version)      { Write-Host ('    ArcGIS Server {0}' -f $test.Version) -ForegroundColor DarkGray }
+        if ($test.MachineCount) { Write-Host ('    {0} machine(s) in the site' -f $test.MachineCount) -ForegroundColor DarkGray }
+        if ($test.Message -ne 'Connected.') { Write-Host ('    ' + $test.Message) -ForegroundColor Yellow }
+    }
+
+    $path = Save-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass
+
+    Write-Host ''
+    Write-Host ('  Saved to {0}' -f $path) -ForegroundColor Green
+    Write-Host '  The password is encrypted with Windows DPAPI: it can only be read' -ForegroundColor DarkGray
+    Write-Host '  back by this Windows account on this machine.' -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '  The ArcGIS checks are disabled by default. Run them with:' -ForegroundColor DarkGray
+    Write-Host '    .\Start-PMCheck.ps1 -Only AGS' -ForegroundColor Gray
+    Write-Host '  or remove "AGS" from Checks.Disabled in Config\settings.json to' -ForegroundColor DarkGray
+    Write-Host '  include them in every run.' -ForegroundColor DarkGray
+}
+
+function Test-PMArcGISSavedConnection {
+    try { $conn = Get-PMArcGISConnection }
+    catch {
+        Write-Host ''
+        Write-Host '  Could not read the saved connection:' -ForegroundColor Red
+        Write-Host ('    ' + $_.Exception.Message) -ForegroundColor Yellow
+        return
+    }
+
+    if ($null -eq $conn) {
+        Write-Host ''
+        Write-Host '  Nothing saved yet - choose 1 first.' -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host ''
+    Write-Host ('  Testing {0} as {1}...' -f $conn.Url, $conn.Username) -ForegroundColor DarkGray
+    $test = Test-PMArcGISConnection -Url $conn.Url -Username $conn.Username -Password $conn.Password
+
+    Write-Host ''
+    if ($test.Success) {
+        Write-Host '  Connection OK' -ForegroundColor Green
+        if ($test.Version)      { Write-Host ('    ArcGIS Server {0}' -f $test.Version) -ForegroundColor DarkGray }
+        if ($test.MachineCount) { Write-Host ('    {0} machine(s) in the site' -f $test.MachineCount) -ForegroundColor DarkGray }
+        if ($test.Message -ne 'Connected.') { Write-Host ('    ' + $test.Message) -ForegroundColor Yellow }
+    }
+    else {
+        Write-Host '  Connection FAILED' -ForegroundColor Red
+        Write-Host ('    ' + $test.Message) -ForegroundColor Yellow
+    }
+}
+
+function Show-PMArcGISMenu {
+    while ($true) {
+        Clear-Host
+        Write-PMRule
+        Write-Host '  ArcGIS Server connection' -ForegroundColor Cyan
+        Write-PMRule
+        Write-Host ''
+        Show-PMArcGISStatus
+        Write-Host ''
+        Write-Host '   [1]  Set connection (URL, username, password)'
+        Write-Host '   [2]  Test the saved connection'
+        Write-Host '   [3]  Remove the saved connection'
+        Write-Host ''
+        Write-Host '   [B]  Back to the main menu'
+        Write-Host ''
+
+        $c = Read-Host '  Choice'
+        switch ($c.Trim().ToUpper()) {
+            '1' { Set-PMArcGISConnectionInteractive; Write-Host ''; Read-Host '  Press Enter to continue' | Out-Null }
+            '2' { Test-PMArcGISSavedConnection;      Write-Host ''; Read-Host '  Press Enter to continue' | Out-Null }
+            '3' {
+                Write-Host ''
+                if (Clear-PMArcGISConnection) {
+                    Write-Host '  Removed.' -ForegroundColor Green
+                }
+                else {
+                    Write-Host '  Nothing was saved.' -ForegroundColor Yellow
+                }
+                Write-Host ''
+                Read-Host '  Press Enter to continue' | Out-Null
+            }
+            'B' { return }
+            ''  { return }
+            default {
+                Write-Host ''
+                Write-Host '  Not a valid choice.' -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+}
+
 # --- the menu ---------------------------------------------------------------
+# $chosen drives the loop rather than break/continue inside the switch.
+#
+# PowerShell binds break and continue to the SWITCH, not to an enclosing
+# while: a `continue` in a case exits the switch and falls straight into
+# whatever follows it. The earlier version of this menu ended `while` with a
+# bare `break` after the switch and used `continue` to mean "show the menu
+# again", so pressing an invalid key - or cancelling out of the custom
+# duration prompt - silently started a full assessment instead of redrawing
+# the menu. Verified against the live behaviour, not assumed.
 $minutes   = 0
 $runReport = $true
+$chosen    = $false
 
-while ($true) {
+while (-not $chosen) {
 
     Clear-Host
     Write-PMRule
@@ -111,6 +312,15 @@ while ($true) {
 
     Show-PMExistingData
 
+    # Read fresh each pass so the hint updates immediately after the operator
+    # sets or removes a connection in the submenu.
+    $agsHint = '(not configured)'
+    try {
+        $agsConn = Get-PMArcGISConnection
+        if ($null -ne $agsConn) { $agsHint = '(' + $agsConn.Url + ')' }
+    }
+    catch { $agsHint = '(saved, but unreadable here)' }
+
     Write-Host '  Collect CPU / memory samples before the assessment?'
     Write-Host ''
     Write-Host '   [1]  No sampling - assess now                 ' -NoNewline
@@ -121,36 +331,37 @@ while ($true) {
     Write-Host '   [5]  Sample for a custom duration...'
     Write-Host '   [6]  Sample only - do not build a report'
     Write-Host ''
+    Write-Host '   [A]  ArcGIS Server connection...            ' -NoNewline
+    Write-Host $agsHint -ForegroundColor DarkGray
+    Write-Host ''
     Write-Host '   [Q]  Quit'
     Write-Host ''
 
     $choice = Read-Host '  Choice [1]'
     if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
 
+    # Every case either sets $chosen (proceed) or leaves it false (redraw).
     switch ($choice.Trim().ToUpper()) {
-        '1' { $minutes = 0;               $runReport = $true;  break }
-        '2' { $minutes = 15;              $runReport = $true;  break }
-        '3' { $minutes = $defaultMinutes; $runReport = $true;  break }
-        '4' { $minutes = 60;              $runReport = $true;  break }
+        '1' { $minutes = 0;               $runReport = $true;  $chosen = $true }
+        '2' { $minutes = 15;              $runReport = $true;  $chosen = $true }
+        '3' { $minutes = $defaultMinutes; $runReport = $true;  $chosen = $true }
+        '4' { $minutes = 60;              $runReport = $true;  $chosen = $true }
         '5' {
             $custom = Read-PMCustomMinutes
-            if ($custom -eq 0) { continue }
-            $minutes = $custom; $runReport = $true; break
+            if ($custom -gt 0) { $minutes = $custom; $runReport = $true; $chosen = $true }
         }
         '6' {
             $custom = Read-PMCustomMinutes
-            if ($custom -eq 0) { continue }
-            $minutes = $custom; $runReport = $false; break
+            if ($custom -gt 0) { $minutes = $custom; $runReport = $false; $chosen = $true }
         }
+        'A' { Show-PMArcGISMenu }
         'Q' { Write-Host ''; Write-Host '  Cancelled.'; Write-Host ''; exit 0 }
         default {
             Write-Host ''
             Write-Host '  Not a valid choice.' -ForegroundColor Yellow
             Start-Sleep -Seconds 1
-            continue
         }
     }
-    break
 }
 
 # --- act on it --------------------------------------------------------------
