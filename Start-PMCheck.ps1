@@ -108,6 +108,29 @@ foreach ($file in $checkFiles) {
 
 $checks = @(Get-PMRegisteredCheck)
 
+# powershell.exe -File hands every argument over as a literal string, so
+# "-Only SYSTEM,DISK" arrives as ONE element "SYSTEM,DISK" rather than the
+# three-element array the same switch produces when the script is called as
+# .\Start-PMCheck.ps1 from an open prompt. Nothing then matches an id and the
+# run dies with "No checks were selected", which points at the wrong thing
+# entirely. Splitting here makes both launch paths behave the same; check ids
+# never contain a comma, so this cannot merge two real ids by accident.
+#
+# The single-file bootstrap in Build-PMSingle.ps1 already did this for its own
+# forwarded arguments - this is the same trap one layer down, and it is the
+# third time in this project that -File and & have differed. See HANDOVER.md.
+function Expand-PMIdList {
+    param([string[]]$Values)
+    if (-not $Values) { return @() }
+    return @($Values |
+        ForEach-Object { $_ -split ',' } |
+        ForEach-Object { $_.Trim() } |
+        Where-Object   { $_ })
+}
+
+$Only = Expand-PMIdList -Values $Only
+$Skip = Expand-PMIdList -Values $Skip
+
 if ($Only) {
     # An explicit -Only is the operator asking for exactly these, so it also
     # overrides the disabled list in settings.json.

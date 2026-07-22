@@ -360,6 +360,21 @@ machineName, adminURL, synchronize, underMaintenance
 หลังแก้ รันกับไซต์จริงได้ `OK` ตรงกับความจริง และ mock ครบ 4 สถานการณ์
 (`healthy` → OK, `stopped-machine` → CRIT, `no-state` → WARN, `no-machine-access` → WARN)
 
+### `-File` กับ `&` ต่างกันอีกครั้ง — คราวนี้ที่ `Start-PMCheck.ps1` เอง
+
+เจอตอนลองรัน `AGS` รวมกับหัวข้ออื่นด้วย `powershell -File ... -Only SYSTEM,DISK,CERT,AGS`
+แล้วได้ **"No checks were selected"** ทั้งที่ทุก id มีอยู่จริงในรายการที่ error พิมพ์ออกมาเอง
+
+สาเหตุเดิมซ้ำรอบที่สาม: `-File` ส่ง argument เป็นสตริงล้วน `-Only SYSTEM,DISK` จึงมาเป็น
+**1 สมาชิก** `"SYSTEM,DISK"` ไม่ใช่ 3 สมาชิก (พิสูจน์แล้วด้วยสคริปต์ทดสอบเทียบสองวิธีเรียก)
+
+รอบก่อน ๆ แก้เฉพาะที่ bootstrap ของไฟล์เดียว แต่ **`Start-PMCheck.ps1` ที่ถูกเรียกตรง ๆ ยังพลาดอยู่**
+ซึ่งเป็นเส้นทางที่ Task Scheduler และไฟล์ batch ใช้ ตอนนี้เพิ่ม `Expand-PMIdList` แตกจุลภาคเอง
+ทั้ง `-Only` และ `-Skip` — ปลอดภัยเพราะ id ของหัวข้อไม่มีจุลภาคอยู่แล้ว
+
+ทดสอบครบ 4 รูปแบบ: `-File` + จุลภาค, `-Skip` + จุลภาค, ค่าเดียว, และ `&` แบบ array เดิม
+รวมถึงการรันปกติที่ยังเคารพ `Checks.Disabled`
+
 ### สิ่งที่ยืนยันแล้วกับไซต์จริง
 
 - **HTTPS + TLS 1.2** ผ่าน Web Adaptor (`https://<host>/arcgis`) — `Initialize-PMArcGISTransport` ทำงานจริง
