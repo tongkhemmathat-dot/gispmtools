@@ -283,6 +283,11 @@
   "ags.item.build":        { "th": "หมายเลขบิลด์", "en": "Build" },
   "ags.machine.started":   { "th": "ทำงานปกติ", "en": "Started" },
   "ags.machine.stopped":   { "th": "ไม่ทำงาน", "en": "Stopped" },
+  "ags.machine.unknown":   { "th": "อ่านสถานะไม่ได้", "en": "State unavailable" },
+  "ags.machine.maintenance": { "th": "อยู่ระหว่างบำรุงรักษา", "en": "Under maintenance" },
+  "ags.summary.unknown":   { "th": "เชื่อมต่อไซต์ ArcGIS Server เวอร์ชัน {0} ได้ ตรวจเครื่องในไซต์ {1} เครื่อง แต่อ่านสถานะไม่ได้ {2} เครื่อง", "en": "Connected to ArcGIS Server {0}. {1} machine(s) assessed, but the state of {2} could not be read." },
+  "ags.finding.machineUnknown": { "th": "อ่านสถานะของเครื่อง \"{0}\" ไม่ได้ ({1}) จึงยังสรุปไม่ได้ว่าเครื่องนี้ทำงานอยู่หรือไม่ ควรตรวจสอบด้วยตนเองหรือตรวจสอบสิทธิ์ของบัญชีที่ใช้เชื่อมต่อ", "en": "Could not read the state of machine \"{0}\" ({1}), so whether it is running is undetermined. Verify manually, or check the privileges of the connecting account." },
+  "ags.finding.machineMaintenance": { "th": "เครื่อง \"{0}\" ถูกตั้งเป็นโหมดบำรุงรักษา จึงไม่รับภาระงานตามปกติ หากไม่ได้ตั้งใจ ควรนำออกจากโหมดบำรุงรักษา", "en": "Machine \"{0}\" is flagged as under maintenance and is not taking its normal share of load. If that was not intended, take it out of maintenance mode." },
   "ags.finding.machineStopped": { "th": "เครื่อง \"{0}\" ในไซต์ ArcGIS Server ไม่ได้ทำงานอยู่ บริการแผนที่ที่อาศัยเครื่องนี้จะให้บริการไม่ได้หรือรับภาระงานได้น้อยลง ควรตรวจสอบสถานะเครื่องและบริการ ArcGIS Server บนเครื่องนั้น", "en": "Machine \"{0}\" in the ArcGIS Server site is not running. Services relying on it will be unavailable or have reduced capacity. Check the machine and the ArcGIS Server service on it." },
   "ags.finding.noMachineAccess": { "th": "เชื่อมต่อไซต์ได้ แต่อ่านรายการเครื่องในไซต์ไม่ได้ ({0}) หากใช้บัญชีที่จำกัดสิทธิ์ ควรตรวจสอบว่าบัญชีมีสิทธิ์อ่านข้อมูลระบบเพียงพอ", "en": "Signed in successfully but could not list the site machines ({0}). If a restricted account is used, confirm it has enough privilege to read system resources." }
 }

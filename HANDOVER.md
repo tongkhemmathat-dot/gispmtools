@@ -332,17 +332,48 @@ custom duration ก็รันด้วย `-Minutes 0` เงียบ ๆ เ
 ตรวจเพิ่มเติมแล้วว่า **รหัสผ่านและ token ไม่ปรากฏใน `PM-Data.json` หรือ `PM-Report.html`**
 และรายงาน HTML ไม่มีอักขระ U+FFFD (ภาษาไทย 714 ตัวอักษร ครบถ้วน)
 
-### ⚠️ ยังไม่ได้ทดสอบกับ ArcGIS Server จริง
+### บทเรียนสำคัญ — mock ที่เดา schema เอง ทำให้เกิด false positive บน production
 
-mock ครอบคลุมตรรกะของฝั่งเราหมดแล้ว แต่**ไม่ครอบคลุมเรื่องของจริงเหล่านี้**
+**22 ก.ค. 2569** ทดสอบกับไซต์จริงครั้งแรก (ArcGIS Server **11.5.0** ผ่าน Web Adaptor บน HTTPS)
+ผลคือ **รายงานว่าเครื่องทั้ง 2 เครื่อง "ไม่ทำงาน" ระดับวิกฤต ทั้งที่ทั้งคู่ `STARTED` ปกติดี**
 
-- **TLS 1.2 และ self-signed certificate** — mock เป็น `http://` ธรรมดา โค้ดส่วน
-  `Initialize-PMArcGISTransport` และ `Disable-PMArcGISCertificateCheck` จึงยังไม่เคยทำงานจริง
-- **Portal-tier authentication** — ถ้าไซต์ผูกกับ Portal for ArcGIS `generateToken` ของ Server
-  อาจใช้ไม่ได้ ต้องขอ token จาก Portal แทน ยังไม่รองรับ
-- **Web Adaptor** ที่อยู่หน้า site จริง ซึ่งอาจ rewrite path หรือบล็อก `/admin`
+สาเหตุ: `/admin/machines` ของจริง**ไม่คืนสถานะเลย** คืนแค่ 4 ฟิลด์
 
-ใช้เมนู `[A]` → `[2] Test the saved connection` เป็นเครื่องมือตรวจกับไซต์จริง
+```
+machineName, adminURL, synchronize, underMaintenance
+```
+
+สถานะอยู่ที่ **`/admin/machines/<ชื่อเครื่อง>/status`** ต้องเรียกแยกทีละเครื่อง
+(คืน `configuredState` + `realTimeState`)
+
+แต่ mock ที่เขียนไว้**ใส่ `configuredState`/`realTimeState` ลงใน `/machines` เอง** ตามที่เดาว่าน่าจะมี
+โค้ดจึงอ่านได้ค่าว่างบนของจริง แล้วตีความว่า "ไม่ใช่ STARTED = หยุดทำงาน" → CRIT
+
+**สองบทเรียน**
+
+1. **mock ที่ schema ไม่ตรงของจริง อันตรายกว่าไม่มี mock** เพราะมันให้ความมั่นใจปลอม ๆ
+   ตอนนี้แก้ mock ให้ตรงของจริงแล้ว พร้อมคอมเมนต์กำกับไว้ว่าห้ามใส่ฟิลด์ที่ API จริงไม่มี
+2. **สถานะที่อ่านไม่ได้ ต้องไม่ถูกนับเป็น "พัง"** เดิมโค้ดรวม "ว่าง" เข้ากับ "หยุดทำงาน"
+   ตอนนี้แยกเป็น UNKNOWN → `WARN` พร้อมบอกเหตุผล **เครื่องมือเฝ้าระวังที่แจ้งเตือนวิกฤตผิด
+   บนระบบที่ปกติดี แย่กว่าเครื่องมือที่ยอมรับว่ามันไม่รู้**
+
+หลังแก้ รันกับไซต์จริงได้ `OK` ตรงกับความจริง และ mock ครบ 4 สถานการณ์
+(`healthy` → OK, `stopped-machine` → CRIT, `no-state` → WARN, `no-machine-access` → WARN)
+
+### สิ่งที่ยืนยันแล้วกับไซต์จริง
+
+- **HTTPS + TLS 1.2** ผ่าน Web Adaptor (`https://<host>/arcgis`) — `Initialize-PMArcGISTransport` ทำงานจริง
+- **`generateToken`** ด้วย `client=requestip` ใช้ได้กับบัญชี `siteadmin`
+- **ArcGIS Server 11.5.0** (ใหม่กว่าที่ mock จำลองไว้)
+- แปลง URL, token, `/info`, `/machines`, `/machines/<name>/status` ครบเส้นทาง
+
+### ยังไม่ได้ยืนยัน
+
+- **self-signed certificate** — ไซต์ที่ทดสอบใช้ใบรับรองจริง `Disable-PMArcGISCertificateCheck`
+  จึงยังไม่เคยถูกใช้งานจริง
+- **Portal-tier authentication** — ไซต์ที่ทดสอบใช้บัญชีของ ArcGIS Server เอง ถ้าไซต์ผูกกับ
+  Portal for ArcGIS `generateToken` ของ Server อาจใช้ไม่ได้ ต้องขอ token จาก Portal แทน
+- **ไซต์ที่มีมากกว่า 2 เครื่อง** — ตอนนี้เรียก status ทีละเครื่อง (1 + N ครั้ง) ไซต์ใหญ่ควรวัดเวลาก่อน
 
 ---
 

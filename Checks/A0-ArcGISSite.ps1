@@ -5,7 +5,7 @@
 # reaches the site over HTTPS, so it is disabled by default in settings.json
 # for the same reason WU and CONN are: it leaves the machine.
 #
-# Read-only: /info and /machines are both plain GETs.
+# Read-only: /info, /machines and /machines/<name>/status are all plain GETs.
 
 function Invoke-PMCheckArcGISSite {
 
@@ -27,7 +27,7 @@ function Invoke-PMCheckArcGISSite {
         # list machines. That is a privilege problem worth reporting, not a
         # reason to fail the whole check - the version above is already
         # useful on its own.
-        $machines    = @()
+        $machines     = @()
         $machineError = ''
         try {
             $resp = Invoke-PMArcGISAdmin -Root $session.Root -Path 'machines' -Token $session.Token -TimeoutSec $session.TimeoutSec
@@ -37,29 +37,67 @@ function Invoke-PMCheckArcGISSite {
 
         $started = 0
         $stopped = 0
+        $unknown = 0
         $raw     = @()
 
         foreach ($m in $machines) {
-            $name  = [string]$m.machineName
-            $state = [string]$m.configuredState
+            $name = [string]$m.machineName
 
-            # The site reports what it was told to do (configuredState) and,
-            # when it can reach the machine, what is actually happening
-            # (realTimeState). They disagree exactly when something is wrong.
-            $real = ''
-            if ($m.PSObject.Properties['realTimeState']) { $real = [string]$m.realTimeState }
+            # /admin/machines lists only machineName, adminURL, synchronize
+            # and underMaintenance - it carries NO state at all. Verified
+            # against ArcGIS Server 11.5; the run state has to be fetched
+            # per machine from /machines/<name>/status.
+            #
+            # The first version of this check read $m.configuredState
+            # straight off the list entry, got an empty string for every
+            # machine, and reported a healthy two-machine production site as
+            # two CRITical outages. That is why an unreadable state is now
+            # treated as UNKNOWN rather than folded in with "stopped": a
+            # monitoring tool that cries wolf on a healthy site is worse than
+            # one that admits it does not know.
+            $configured = ''
+            $real       = ''
+            $stateError = ''
+            try {
+                $st = Invoke-PMArcGISAdmin -Root $session.Root -Path ("machines/$name/status") `
+                                           -Token $session.Token -TimeoutSec $session.TimeoutSec
+                if ($st.PSObject.Properties['configuredState']) { $configured = [string]$st.configuredState }
+                if ($st.PSObject.Properties['realTimeState'])   { $real       = [string]$st.realTimeState }
+            }
+            catch { $stateError = $_.Exception.Message }
 
-            if ($real) { $effective = $real } else { $effective = $state }
+            # realTimeState is what is actually happening; configuredState is
+            # only what the site was told to do. Prefer the former.
+            if ($real) { $effective = $real } else { $effective = $configured }
 
-            if ($effective -eq 'STARTED') {
+            $maintenance = $false
+            if ($m.PSObject.Properties['underMaintenance']) { $maintenance = [bool]$m.underMaintenance }
+
+            if ([string]::IsNullOrWhiteSpace($effective)) {
+                $unknown++
+                $rowStatus = 'WARN'
+                $valueKey  = 'ags.machine.unknown'
+                $reason    = $stateError
+                if ([string]::IsNullOrWhiteSpace($reason)) { $reason = 'the status resource returned no state' }
+                $findings += New-PMFinding -Severity 'WARN' -TextKey 'ags.finding.machineUnknown' -Values @($name, $reason)
+            }
+            elseif ($effective -eq 'STARTED') {
                 $started++
-                $rowStatus = 'OK'
-                $valueKey  = 'ags.machine.started'
+                if ($maintenance) {
+                    $rowStatus = 'WARN'
+                    $valueKey  = 'ags.machine.maintenance'
+                    $findings += New-PMFinding -Severity 'WARN' -TextKey 'ags.finding.machineMaintenance' -Values @($name)
+                }
+                else {
+                    $rowStatus = 'OK'
+                    $valueKey  = 'ags.machine.started'
+                }
             }
             else {
                 $stopped++
                 $rowStatus = 'CRIT'
                 $valueKey  = 'ags.machine.stopped'
+                $findings += New-PMFinding -Severity 'CRIT' -TextKey 'ags.finding.machineStopped' -Values @($name)
             }
 
             $word = Get-PMWord -Key $valueKey
@@ -71,13 +109,10 @@ function Invoke-PMCheckArcGISSite {
                 _RowStatus = $rowStatus
             }
 
-            if ($rowStatus -eq 'CRIT') {
-                $findings += New-PMFinding -Severity 'CRIT' -TextKey 'ags.finding.machineStopped' -Values @($name)
-            }
-
             $raw += [pscustomobject]@{
-                MachineName = $name; ConfiguredState = $state; RealTimeState = $real
-                Platform = [string]$m.platform; AdminURL = [string]$m.adminURL
+                MachineName = $name; ConfiguredState = $configured; RealTimeState = $real
+                UnderMaintenance = $maintenance; AdminURL = [string]$m.adminURL
+                StateError = $stateError
             }
         }
 
@@ -85,20 +120,29 @@ function Invoke-PMCheckArcGISSite {
             $findings += New-PMFinding -Severity 'WARN' -TextKey 'ags.finding.noMachineAccess' -Values @($machineError)
         }
 
+        $version = [string]$info.currentversion
+
         if ($stopped -gt 0) {
             $status = 'CRIT'
             $sumKey = 'ags.summary.issue'
             $sumVal = @($machines.Count, $stopped)
         }
+        elseif ($unknown -gt 0) {
+            $status = 'WARN'
+            $sumKey = 'ags.summary.unknown'
+            $sumVal = @($version, $machines.Count, $unknown)
+        }
         elseif ($machineError) {
             $status = 'WARN'
             $sumKey = 'ags.summary.partial'
-            $sumVal = @([string]$info.currentversion)
+            $sumVal = @($version)
         }
         else {
-            $status = 'OK'
+            # A machine in maintenance still counts as reachable and healthy
+            # for the roll-up; its own row and finding carry the warning.
+            $status = Get-PMWorstStatus (@($rows | ForEach-Object { $_._RowStatus }) + @('OK'))
             $sumKey = 'ags.summary.ok'
-            $sumVal = @([string]$info.currentversion, $machines.Count)
+            $sumVal = @($version, $machines.Count)
         }
 
         return New-PMResult -Id 'AGS' -TitleKey 'ags.title' -Status $status `
