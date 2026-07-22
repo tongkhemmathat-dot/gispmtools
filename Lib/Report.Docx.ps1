@@ -53,7 +53,7 @@ $Script:PMDocxHead  = Get-PMWordColor 247 249 251
 # actual name - the negative index is the one locale-independent handle Word
 # exposes for its built-in styles.
 function Set-PMWordStyleFont {
-    param([Parameter(Mandatory)]$Style, [Parameter(Mandatory)][string]$Name, [int]$Size)
+    param([Parameter(Mandatory)]$Style, [Parameter(Mandatory)][string]$Name, [double]$Size)
     $Style.Font.NameAscii = $Name
     try { $Style.Font.NameFarEast = $Name } catch { }
     $Style.Font.NameOther = $Name
@@ -61,11 +61,30 @@ function Set-PMWordStyleFont {
     if ($Size) { $Style.Font.Size = $Size }
 }
 
+# Converts centimetres to points: Word's COM object model always measures
+# PageSetup and cell padding in points internally, regardless of what the
+# ruler displays, and the government standard below is written in cm.
+function ConvertTo-PMWordPoints {
+    param([Parameter(Mandatory)][double]$Cm)
+    return [math]::Round($Cm * 28.3465, 1)
+}
+
 # Appends one paragraph at the end of the document. Doc.Content is re-fetched
 # and re-collapsed on every call rather than carrying a cursor Range between
 # calls, because a Range captured before a table insert does not reliably
 # follow the document past it - re-deriving "the end" from Content each time
 # is what stayed correct through every shape of content this file inserts.
+#
+# Style/Size/Color take 0 as "leave the style's default alone" rather than
+# using Nullable<T> - passing a boxed Nullable[double] into Word's Font.Size
+# COM setter throws "Specified cast is not valid" once a real document (real
+# Thai text, several tables already inserted) is behind it, even though the
+# exact same assignment succeeds against a blank test document. That gap
+# between an isolated repro and the real data is what made this take a
+# instrumented run to actually catch, rather than reading the code. None of
+# these three ever have a legitimate reason to BE 0 (no wdBuiltinStyle index
+# is 0, no font shrinks to nothing, and black is what a range already renders
+# without an explicit color), so 0 costs nothing as the "unset" sentinel.
 #
 # -Tight is for a line that continues the one just written (an English
 # translation under its Thai line, the way .bi .en sits close under .th in
@@ -80,9 +99,9 @@ function Add-PMWordParagraph {
     param(
         [Parameter(Mandatory)]$Doc,
         [string]$Text = '',
-        [Nullable[int]]$Style,
-        [Nullable[int]]$Size,
-        [Nullable[int]]$Color,
+        [int]$Style = 0,
+        [double]$Size = 0,
+        [int]$Color = 0,
         [switch]$Bold,
         [switch]$Tight
     )
@@ -90,10 +109,10 @@ function Add-PMWordParagraph {
     $r.InsertParagraphAfter()
     $r = $Doc.Content; $r.Collapse(0) | Out-Null
     if ($Tight) { $r.ParagraphFormat.SpaceBefore = 0; $r.ParagraphFormat.SpaceAfter = 0 }
-    if ($null -ne $Style) { $r.Style = $Style }
-    if ($null -ne $Size)  { $r.Font.Size = $Size }
-    if ($null -ne $Color) { $r.Font.Color = $Color }
-    if ($Bold)             { $r.Font.Bold = -1 }
+    if ($Style -ne 0) { $r.Style = $Style }
+    if ($Size -ne 0)  { $r.Font.Size = $Size }
+    if ($Color -ne 0) { $r.Font.Color = $Color }
+    if ($Bold)        { $r.Font.Bold = -1 }
     $r.Text = $Text
     return $r
 }
@@ -147,7 +166,7 @@ function Set-PMWordCellBilingual {
     )
     $lines = @(@{ Text = $Th; Bold = [bool]$Bold })
     if (-not [string]::IsNullOrWhiteSpace($En)) {
-        $lines += @{ Text = $En; Size = 9; Color = $Script:PMDocxFaint }
+        $lines += @{ Text = $En; Size = 12; Color = $Script:PMDocxFaint }
     }
     Add-PMWordCellLines -Cell $Cell -Lines $lines
 }
@@ -159,7 +178,7 @@ function Set-PMWordCellBilingual {
 # it directly; it does not throw, which would have been easier to notice),
 # so cell values are read with the dynamic dot form ($row.($col.Key)) instead.
 function New-PMDocxResultTable {
-    param([Parameter(Mandatory)]$Doc, [Parameter(Mandatory)]$Result)
+    param([Parameter(Mandatory)]$Doc, [Parameter(Mandatory)]$Result, [double]$BodySize = 14)
 
     if (-not $Result.Columns -or $Result.Columns.Count -eq 0) { return }
 
@@ -176,7 +195,8 @@ function New-PMDocxResultTable {
     $tbl = $Doc.Tables.Add($r, $nRows, $nCols)
     $tbl.Borders.Enable = -1
     $tbl.Rows.AllowBreakAcrossPages = 0   # keep each row whole across a page break
-    $tbl.Range.Font.Size = 9.5
+    $tbl.TopPadding = 4; $tbl.BottomPadding = 4; $tbl.LeftPadding = 8; $tbl.RightPadding = 8
+    $tbl.Range.Font.Size = $BodySize
 
     for ($c = 0; $c -lt $cols.Count; $c++) {
         Set-PMWordCellBilingual -Cell $tbl.Cell(1, $c + 1) -Th $cols[$c].Th -En $cols[$c].En -Bold
@@ -228,6 +248,21 @@ function New-PMDocxReport {
     $counts = @{ OK = 0; WARN = 0; CRIT = 0; INFO = 0; ERROR = 0 }
     foreach ($res in $Results) { $counts[$res.Status] = $counts[$res.Status] + 1 }
 
+    # Font sizes, all anchored to the 16pt body size the government standard
+    # sets for TH Sarabun - see the size table in TECHNICAL.md. Table text
+    # runs one step down from body (14) so a wide result table still fits the
+    # page without shrinking to the point of looking like a footnote; the
+    # bilingual "En" line under each Thai line runs one step down again.
+    $szBody      = 16
+    $szHead1     = 22
+    $szHead2     = 18
+    $szMastOrg   = 16
+    $szMastTitle = 24
+    $szTile      = 24
+    $szTileLabel = 13
+    $szSecondary = 14
+    $szFooter    = 12
+
     $word = $null
     $doc  = $null
     try {
@@ -237,16 +272,29 @@ function New-PMDocxReport {
         $word.Visible = $false
         $doc = $word.Documents.Add()
 
-        $doc.PageSetup.TopMargin    = 42
-        $doc.PageSetup.BottomMargin = 42
-        $doc.PageSetup.LeftMargin   = 50
-        $doc.PageSetup.RightMargin  = 50
+        # Thai government document standard (Regulation of the Office of the
+        # Prime Minister on Correspondence Work, B.E. 2526, and the printing
+        # manual issued under it): left 3cm, right 2cm, top/bottom 2.5cm, TH
+        # Sarabun family at 16pt. Sourced from that manual, not guessed.
+        $doc.PageSetup.LeftMargin   = ConvertTo-PMWordPoints 3
+        $doc.PageSetup.RightMargin  = ConvertTo-PMWordPoints 2
+        $doc.PageSetup.TopMargin    = ConvertTo-PMWordPoints 2.5
+        $doc.PageSetup.BottomMargin = ConvertTo-PMWordPoints 2.5
 
-        Set-PMWordStyleFont -Style $doc.Styles.Item(-1)  -Name 'Leelawadee UI' -Size 11
-        Set-PMWordStyleFont -Style $doc.Styles.Item(-2)  -Name 'Leelawadee UI' -Size 15
-        Set-PMWordStyleFont -Style $doc.Styles.Item(-3)  -Name 'Leelawadee UI' -Size 12.5
-        Set-PMWordStyleFont -Style $doc.Styles.Item(-63) -Name 'Leelawadee UI' -Size 20
+        Set-PMWordStyleFont -Style $doc.Styles.Item(-1) -Name 'TH Sarabun New' -Size $szBody
+        # The standard's "Before 6 pt." convention (space before a new block,
+        # no space after) replaces Word's own Normal-style default of 8pt
+        # space-after, which read as an odd, slightly uneven gap once the
+        # body text grew to 16pt. -Tight (see Add-PMWordParagraph) zeroes
+        # both for a bilingual line that should hug the one above it.
+        $doc.Styles.Item(-1).ParagraphFormat.SpaceBefore = 6
+        $doc.Styles.Item(-1).ParagraphFormat.SpaceAfter  = 0
+
+        Set-PMWordStyleFont -Style $doc.Styles.Item(-2) -Name 'TH Sarabun New' -Size $szHead1
+        Set-PMWordStyleFont -Style $doc.Styles.Item(-3) -Name 'TH Sarabun New' -Size $szHead2
+        $doc.Styles.Item(-2).Font.Bold  = -1
         $doc.Styles.Item(-2).Font.Color = $Script:PMDocxNavy
+        $doc.Styles.Item(-3).Font.Bold  = -1
         $doc.Styles.Item(-3).Font.Color = $Script:PMDocxNavy
 
         # ---------- masthead ----------
@@ -260,18 +308,18 @@ function New-PMDocxReport {
         $mast.Borders.Enable = 0
         $mcell = $mast.Cell(1, 1)
         $mcell.Shading.BackgroundPatternColor = $Script:PMDocxNavy
-        $mcell.TopPadding = 16; $mcell.BottomPadding = 16
-        $mcell.LeftPadding = 18; $mcell.RightPadding = 18
+        $mcell.TopPadding = 18; $mcell.BottomPadding = 18
+        $mcell.LeftPadding = 22; $mcell.RightPadding = 22
         $white = Get-PMWordColor 255 255 255
 
         $mastLines = New-Object System.Collections.Generic.List[object]
         if (-not [string]::IsNullOrWhiteSpace($orgTh)) {
             $orgLine = $orgTh
             if (-not [string]::IsNullOrWhiteSpace($orgEn)) { $orgLine += ' / ' + $orgEn }
-            $mastLines.Add(@{ Text = $orgLine; Size = 11; Color = $white })
+            $mastLines.Add(@{ Text = $orgLine; Size = $szMastOrg; Color = $white })
         }
-        $mastLines.Add(@{ Text = $title.Th; Size = 20; Bold = $true; Color = $white })
-        $mastLines.Add(@{ Text = ($title.En + ' - ' + $sub.En); Size = 12; Color = $white })
+        $mastLines.Add(@{ Text = $title.Th; Size = $szMastTitle; Bold = $true; Color = $white })
+        $mastLines.Add(@{ Text = ($title.En + ' - ' + $sub.En); Size = $szBody; Color = $white })
         Add-PMWordCellLines -Cell $mcell -Lines $mastLines
 
         # ---------- meta grid ----------
@@ -294,7 +342,10 @@ function New-PMDocxReport {
         $mg = $doc.Tables.Add($r, $metaRows.Count, 2)
         $mg.Borders.Enable = -1
         $mg.Rows.AllowBreakAcrossPages = 0
-        $mg.Columns.Item(1).Width = 130
+        $mg.TopPadding = 4; $mg.BottomPadding = 4; $mg.LeftPadding = 8; $mg.RightPadding = 8
+        # Wide enough for the longest bilingual label ("Assessment Date /
+        # Server" and its Thai counterpart) at 16pt without wrapping badly.
+        $mg.Columns.Item(1).Width = ConvertTo-PMWordPoints 5.5
         for ($i = 0; $i -lt $metaRows.Count; $i++) {
             $m = $metaRows[$i]
             $lab = Get-PMText -Key $m.K
@@ -313,16 +364,17 @@ function New-PMDocxReport {
         $tiles = $doc.Tables.Add($r, 2, $shown.Count)
         $tiles.Borders.Enable = -1
         $tiles.Rows.AllowBreakAcrossPages = 0
+        $tiles.TopPadding = 6; $tiles.BottomPadding = 6; $tiles.LeftPadding = 6; $tiles.RightPadding = 6
         for ($i = 0; $i -lt $shown.Count; $i++) {
             $s = $shown[$i]
             $lab = Get-PMText -Key "status.$s"
             $sc = Get-PMDocxStatusColor -Status $s
             Set-PMWordCellBilingual -Cell $tiles.Cell(1, $i + 1) -Th ([string]$counts[$s]) -Bold
-            $tiles.Cell(1, $i + 1).Range.Font.Size = 18
+            $tiles.Cell(1, $i + 1).Range.Font.Size = $szTile
             $tiles.Cell(1, $i + 1).Range.Font.Color = $sc.FG
             $tiles.Cell(1, $i + 1).Shading.BackgroundPatternColor = $sc.BG
             Set-PMWordCellBilingual -Cell $tiles.Cell(2, $i + 1) -Th $lab.Th -En $lab.En
-            $tiles.Cell(2, $i + 1).Range.Font.Size = 9
+            $tiles.Cell(2, $i + 1).Range.Font.Size = $szTileLabel
         }
 
         $total = $Results.Count
@@ -336,7 +388,7 @@ function New-PMDocxReport {
             $verdict = Get-PMText -Key 'ui.overall.ok' -Values @($total)
         }
         Add-PMWordParagraph -Doc $doc -Text $verdict.Th -Bold -Color $Script:PMDocxNavy | Out-Null
-        Add-PMWordParagraph -Doc $doc -Text $verdict.En -Size 9 -Color $Script:PMDocxMuted -Tight | Out-Null
+        Add-PMWordParagraph -Doc $doc -Text $verdict.En -Size $szSecondary -Color $Script:PMDocxMuted -Tight | Out-Null
 
         if (-not $Meta.IsAdmin) {
             $w = Get-PMText -Key 'ui.notAdminWarning'
@@ -353,7 +405,8 @@ function New-PMDocxReport {
         $ov = $doc.Tables.Add($r, $Results.Count + 1, 3)
         $ov.Borders.Enable = -1
         $ov.Rows.AllowBreakAcrossPages = 0
-        $ov.Range.Font.Size = 10
+        $ov.TopPadding = 4; $ov.BottomPadding = 4; $ov.LeftPadding = 8; $ov.RightPadding = 8
+        $ov.Range.Font.Size = $szSecondary
         foreach ($pair in @(@(1, 'ui.col.topic'), @(2, 'ui.col.status'), @(3, 'ui.col.summary'))) {
             $c = Get-PMText -Key $pair[1]
             Set-PMWordCellBilingual -Cell $ov.Cell(1, $pair[0]) -Th $c.Th -En $c.En -Bold
@@ -401,8 +454,8 @@ function New-PMDocxReport {
                     $t = Get-PMText -Key "status.$($f.Severity)"
                     $sc = Get-PMDocxStatusColor -Status $f.Severity
                     Add-PMWordParagraph -Doc $doc -Text ("$($i + 1). [$($t.Th)] $($f.TitleTh)") -Bold -Color $sc.FG | Out-Null
-                    Add-PMWordParagraph -Doc $doc -Text $f.Th -Size 10 | Out-Null
-                    Add-PMWordParagraph -Doc $doc -Text $f.En -Size 9 -Color $Script:PMDocxFaint -Tight | Out-Null
+                    Add-PMWordParagraph -Doc $doc -Text $f.Th | Out-Null
+                    Add-PMWordParagraph -Doc $doc -Text $f.En -Size $szSecondary -Color $Script:PMDocxFaint -Tight | Out-Null
                 }
             }
         }
@@ -417,29 +470,29 @@ function New-PMDocxReport {
             $doc.Content.Paragraphs.Last.Range.Font.Color = $sc.FG
 
             if (-not [string]::IsNullOrWhiteSpace($res.SummaryTh)) {
-                Add-PMWordParagraph -Doc $doc -Text $res.SummaryTh -Size 10 | Out-Null
+                Add-PMWordParagraph -Doc $doc -Text $res.SummaryTh | Out-Null
                 if (-not [string]::IsNullOrWhiteSpace($res.SummaryEn)) {
-                    Add-PMWordParagraph -Doc $doc -Text $res.SummaryEn -Size 9 -Color $Script:PMDocxFaint -Tight | Out-Null
+                    Add-PMWordParagraph -Doc $doc -Text $res.SummaryEn -Size $szSecondary -Color $Script:PMDocxFaint -Tight | Out-Null
                 }
             }
 
             if ($res.Chart) {
                 $note = Get-PMText -Key 'ui.docxChartNote'
-                Add-PMWordParagraph -Doc $doc -Text $note.Th -Size 9 -Color $Script:PMDocxFaint | Out-Null
+                Add-PMWordParagraph -Doc $doc -Text $note.Th -Size $szSecondary -Color $Script:PMDocxFaint | Out-Null
             }
 
             if ($res.Rows -and $res.Rows.Count -gt 0) {
-                New-PMDocxResultTable -Doc $doc -Result $res
+                New-PMDocxResultTable -Doc $doc -Result $res -BodySize $szSecondary
             }
             else {
                 $n = Get-PMText -Key 'ui.noRows'
-                Add-PMWordParagraph -Doc $doc -Text ($n.Th + ' / ' + $n.En) -Size 9 -Color $Script:PMDocxFaint | Out-Null
+                Add-PMWordParagraph -Doc $doc -Text ($n.Th + ' / ' + $n.En) -Size $szSecondary -Color $Script:PMDocxFaint | Out-Null
             }
         }
 
         # ---------- footer ----------
         $foot = Get-PMText -Key 'ui.generatedFooter' -Values @($Meta.ToolVersion, $date.Th, $Meta.DurationSec)
-        Add-PMWordParagraph -Doc $doc -Text $foot.Th -Size 8.5 -Color $Script:PMDocxFaint | Out-Null
+        Add-PMWordParagraph -Doc $doc -Text $foot.Th -Size $szFooter -Color $Script:PMDocxFaint | Out-Null
 
         $outDir = Split-Path -Parent $Path
         if ($outDir -and -not (Test-Path -LiteralPath $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
