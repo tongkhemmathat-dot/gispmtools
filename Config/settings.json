@@ -1,0 +1,62 @@
+﻿{
+  "Organization": {
+    "NameTh": "ชื่อหน่วยงาน (แก้ไขได้ที่ไฟล์นี้)",
+    "NameEn": "Your Organization Name",
+    "DepartmentTh": "ฝ่ายเทคโนโลยีสารสนเทศ",
+    "DepartmentEn": "Information Technology Division"
+  },
+
+  "Report": {
+    "SystemNameTh": "",
+    "SystemNameEn": "",
+    "PreparedBy": "",
+    "ToolVersion": "1.0.0",
+
+    "_showRecommendations": "แสดงหัวข้อ 'ข้อเสนอแนะและสิ่งที่ควรดำเนินการ' ในรายงานหรือไม่ | ปิดไว้เพื่อให้รายงานกระชับ | ข้อเสนอแนะยังถูกคำนวณและเก็บไว้ใน PM-Data.json ครบเสมอ ไม่ว่าจะเปิดหรือปิด",
+    "ShowRecommendations": false
+  },
+
+  "_checksNote": "ทุกหัวข้อเป็นการอ่านค่าเท่านั้น ไม่มีการแก้ไขค่า ไม่ติดตั้งอะไร และไม่รีสตาร์ทเครื่อง",
+  "Checks": {
+    "_comment": "รหัสหัวข้อที่ไม่ต้องการให้รันอัตโนมัติ | WU ต้องติดต่อ WSUS หรือ Microsoft Update ซึ่งใช้เวลานานมากและอาจค้าง | CONN เป็นหัวข้อเดียวที่ส่ง ping ออกไปจริง หากมี IPS/IDS อาจถูกมองว่าเป็นการสแกนแล้วบล็อกเครื่อง | ถ้าต้องการรันเฉพาะครั้งให้สั่ง .\\Start-PMCheck.ps1 -Only CONN",
+    "Disabled": ["WU", "CONN"]
+  },
+
+  "Lookback": {
+    "EventLogDays": 7,
+    "EventLogMaxGroups": 25,
+    "EventLogMaxEvents": 3000,
+    "HotfixCount": 10,
+    "TopProcessCount": 10
+  },
+
+  "Thresholds": {
+    "DiskFreePercent": { "Warn": 20, "Crit": 10, "Direction": "Lower" },
+    "DiskFreeGB":      { "Warn": 20, "Crit": 10, "Direction": "Lower" },
+    "CpuPercent":      { "Warn": 80, "Crit": 90, "Direction": "Higher" },
+    "MemFreePercent":  { "Warn": 15, "Crit": 10, "Direction": "Lower" },
+    "UptimeDays":      { "Warn": 90, "Crit": null, "Direction": "Higher" },
+    "CertExpiryDays":  { "Warn": 30, "Crit": 7,   "Direction": "Lower" },
+    "AvSignatureDays": { "Warn": 3,  "Crit": 14,  "Direction": "Higher" },
+    "LastPatchDays":   { "Warn": 60, "Crit": 120, "Direction": "Higher" },
+    "BackupAgeDays":   { "Warn": 7,  "Crit": 30,  "Direction": "Higher" }
+  },
+
+  "Monitor": {
+    "_comment": "การเก็บกราฟ CPU/หน่วยความจำ | สั่ง .\\Start-PMMonitor.ps1 -Minutes 30 เพื่อเก็บตัวอย่าง แล้วรัน Start-PMCheck.ps1 กราฟจะขึ้นในรายงานเอง | หรือสั่ง .\\Start-PMCheck.ps1 -MonitorMinutes 30 ให้ทำต่อกันในคำสั่งเดียว",
+    "DefaultMinutes": 30,
+    "IntervalSeconds": 10,
+    "MaxDataAgeHours": 24,
+    "MaxChartPoints": 360
+  },
+
+  "Backup": {
+    "TaskKeywords": ["backup", "veeam", "acronis", "commvault", "netbackup", "backupexec", "wbadmin", "arcserve", "sqlbackup"]
+  },
+
+  "Connectivity": {
+    "PingGateway": true,
+    "PingDns": true,
+    "ExtraTargets": []
+  }
+}

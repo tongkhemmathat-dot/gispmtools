@@ -1,0 +1,13 @@
+# Assessment output from real servers: hostnames, disk layout, running
+# services, event log extracts, certificate subjects and network settings.
+# This is reconnaissance data about live machines and never belongs in the
+# repository, private or not.
+Output/
+
+# Built artefacts. Rebuild any time with Build-PMSingle.ps1 and attach the
+# result to a GitHub Release instead: the file is a 95 KB base64 payload that
+# changes wholesale on every build, so committing it would bury real diffs.
+Dist/
+
+# Machine-local editor and tooling state.
+.claude/settings.local.json

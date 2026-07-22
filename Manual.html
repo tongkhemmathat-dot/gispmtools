@@ -1,0 +1,734 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คู่มือการใช้งาน PMtools</title>
+<style>
+:root{
+  --ink:#1a2332; --muted:#5b6b7f; --faint:#8496a9;
+  --line:#dde3ea; --line-soft:#eef1f5; --paper:#ffffff; --bg:#f4f6f9;
+  --navy:#1f3a5f;
+  --ok-fg:#0e6b3d;   --ok-bg:#e6f4ec;   --ok-line:#b8dfc9;
+  --warn-fg:#8a5300; --warn-bg:#fdf4e3; --warn-line:#f0d9a8;
+  --crit-fg:#a91b16; --crit-bg:#fdeceb; --crit-line:#f3c2be;
+  --info-fg:#40536b; --info-bg:#eef2f7; --info-line:#d4dde8;
+  --err-fg:#6b3410;  --err-bg:#fbeee4;  --err-line:#e8cdb4;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; padding:28px 16px 64px; background:var(--bg); color:var(--ink);
+  font-family:"Sarabun","TH SarabunPSK","Leelawadee UI","Segoe UI",Tahoma,sans-serif;
+  font-size:15.5px; line-height:1.72;
+}
+.sheet{max-width:1040px; margin:0 auto}
+
+.masthead{background:var(--navy); color:#fff; border-radius:10px 10px 0 0; padding:30px 34px 26px}
+.masthead .kicker{font-size:14px; color:rgba(255,255,255,.68); letter-spacing:.4px}
+.masthead h1{margin:8px 0 6px; font-size:29px; font-weight:700}
+.masthead .sub{font-size:15px; color:rgba(255,255,255,.72); margin:0}
+.subhead{
+  background:var(--paper); border:1px solid var(--line); border-top:none;
+  border-radius:0 0 10px 10px; padding:16px 34px; margin-bottom:24px;
+  font-size:14px; color:var(--muted);
+}
+
+section{background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:24px 30px 28px; margin-bottom:20px}
+h2{margin:0 0 18px; font-size:20px; font-weight:700; padding-bottom:11px; border-bottom:2px solid var(--navy)}
+h2 .n{color:var(--faint); font-weight:400; margin-right:10px}
+h3{margin:26px 0 10px; font-size:16.5px; font-weight:700}
+h3:first-of-type{margin-top:6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px; padding-left:22px}
+li{margin-bottom:6px}
+code{background:var(--info-bg); border:1px solid var(--info-line); border-radius:4px; padding:1px 5px; font-size:.9em; font-family:Consolas,"Courier New",monospace}
+pre{background:#f7f9fb; border:1px solid var(--line); border-left:4px solid var(--navy); border-radius:0 7px 7px 0; padding:14px 16px; overflow-x:auto; margin:0 0 14px}
+pre code{background:none; border:none; padding:0; font-size:13.5px; line-height:1.65}
+.mono{font-family:Consolas,"Courier New",monospace}
+
+.toc{background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:22px 30px 24px; margin-bottom:20px}
+.toc h2{margin-bottom:14px}
+.toc ol{columns:2; column-gap:36px; padding-left:20px; margin:0}
+.toc li{margin-bottom:7px; break-inside:avoid}
+.toc a{color:var(--navy); text-decoration:none; font-weight:600}
+.toc a:hover{text-decoration:underline}
+
+.tablewrap{overflow-x:auto; margin-bottom:14px}
+table{border-collapse:collapse; width:100%; font-size:14.5px}
+th,td{padding:9px 12px; border-bottom:1px solid var(--line-soft); text-align:left; vertical-align:top}
+thead th{background:#f7f9fb; border-bottom:2px solid var(--line); font-weight:700; font-size:13.5px; white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.mono,th.mono{font-family:Consolas,"Courier New",monospace; font-size:13px; white-space:nowrap}
+
+.badge{display:inline-block; white-space:nowrap; padding:2px 11px; border-radius:999px; font-size:13px; font-weight:700; border:1px solid transparent}
+.badge .g{margin-right:5px; font-weight:400}
+.b-OK{color:var(--ok-fg); background:var(--ok-bg); border-color:var(--ok-line)}
+.b-WARN{color:var(--warn-fg); background:var(--warn-bg); border-color:var(--warn-line)}
+.b-CRIT{color:var(--crit-fg); background:var(--crit-bg); border-color:var(--crit-line)}
+.b-INFO{color:var(--info-fg); background:var(--info-bg); border-color:var(--info-line)}
+.b-ERROR{color:var(--err-fg); background:var(--err-bg); border-color:var(--err-line)}
+
+.callout{border:1px solid var(--line); border-left-width:5px; border-radius:0 8px 8px 0; padding:14px 18px; margin:0 0 16px}
+.callout .t{font-weight:700; margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.c-ok{border-left-color:var(--ok-line); background:var(--ok-bg)}
+.c-ok .t{color:var(--ok-fg)}
+.c-warn{border-left-color:var(--warn-line); background:var(--warn-bg)}
+.c-warn .t{color:var(--warn-fg)}
+.c-crit{border-left-color:var(--crit-line); background:var(--crit-bg)}
+.c-crit .t{color:var(--crit-fg)}
+.c-info{border-left-color:var(--navy); background:var(--info-bg)}
+.c-info .t{color:var(--navy)}
+
+.steps{list-style:none; counter-reset:s; padding:0; margin:0}
+.steps li{counter-increment:s; position:relative; padding:0 0 16px 46px; margin:0}
+.steps li::before{
+  content:counter(s); position:absolute; left:0; top:1px;
+  width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff;
+  font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;
+}
+.steps li .h{font-weight:700; margin-bottom:2px}
+
+footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
+
+.toolbar{max-width:1040px; margin:0 auto 14px; text-align:right}
+.btn{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:7px; padding:8px 16px; font-size:14px; cursor:pointer; font-family:inherit}
+.btn:hover{background:#eef2f7}
+
+@media print{
+  @page{margin:14mm 12mm}
+  html,body{background:#fff}
+  body{padding:0; font-size:11.5pt}
+  *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important}
+  .toolbar{display:none !important}
+  .sheet{max-width:none}
+  section,.toc,.masthead,.subhead{border-radius:0}
+  section{border:none; padding:0 0 7mm; margin-bottom:5mm}
+  h2{page-break-after:avoid}
+  h3{page-break-after:avoid}
+  pre,.callout,tr,thead{page-break-inside:avoid}
+  thead{display:table-header-group}
+  .toc{page-break-after:always}
+  a{color:inherit; text-decoration:none}
+}
+@media (max-width:640px){ .toc ol{columns:1} }
+</style>
+</head>
+<body>
+
+<div class="toolbar"><button class="btn" onclick="window.print()">พิมพ์ / บันทึกเป็น PDF</button></div>
+
+<div class="sheet">
+
+<div class="masthead">
+  <div class="kicker">คู่มือการใช้งาน</div>
+  <h1>PMtools — เครื่องมือบำรุงรักษาเชิงป้องกัน Windows Server</h1>
+  <p class="sub">เก็บสถานะเครื่องแม่ข่ายในรอบเดียว แล้วออกรายงานสองภาษาที่ส่งให้ผู้บริหารได้ทันที</p>
+</div>
+<div class="subhead">
+  เอกสารฉบับนี้อยู่ในโฟลเดอร์เดียวกับเครื่องมือ เปิดได้โดยไม่ต้องต่ออินเทอร์เน็ต และสั่งพิมพ์เป็น PDF ได้
+</div>
+
+<div class="toc">
+  <h2>สารบัญ</h2>
+  <ol>
+    <li><a href="#s1">เครื่องมือนี้ทำอะไร</a></li>
+    <li><a href="#s2">อ่านค่าอย่างเดียว ไม่แก้ไขระบบ</a></li>
+    <li><a href="#s3">เริ่มใช้งาน</a></li>
+    <li><a href="#s4">แบบไฟล์เดียว</a></li>
+    <li><a href="#s5">เมนูเลือกเวลาเก็บข้อมูล</a></li>
+    <li><a href="#s6">วิธีอ่านรายงาน</a></li>
+    <li><a href="#s7">กราฟแนวโน้ม CPU และหน่วยความจำ</a></li>
+    <li><a href="#s8">หัวข้อที่ตรวจทั้งหมด</a></li>
+    <li><a href="#s9">การตั้งค่า</a></li>
+    <li><a href="#s10">สั่งงานจาก PowerShell</a></li>
+    <li><a href="#s11">ปัญหาที่พบบ่อย</a></li>
+    <li><a href="#s12">ข้อจำกัดที่ควรทราบ</a></li>
+  </ol>
+</div>
+
+<!-- 1 -->
+<section id="s1">
+<h2><span class="n">1</span>เครื่องมือนี้ทำอะไร</h2>
+
+<p>PMtools ตรวจสถานะเครื่องแม่ข่าย Windows ทุกหัวข้อที่ควรรู้ในการบำรุงรักษาเชิงป้องกัน
+แล้วสร้างไฟล์รายงาน HTML ภาษาไทยคู่อังกฤษ ที่จัดหน้าเรียบร้อยพอจะส่งให้ผู้บริหารหรือแนบหนังสือราชการได้โดยตรง</p>
+
+<p>ใช้เวลาทั้งหมด <strong>ประมาณ 10 วินาที</strong> ตรวจ 14 หัวข้อ ตั้งแต่พื้นที่ดิสก์ หน่วยความจำ บริการที่หยุดทำงาน
+บันทึกเหตุการณ์ผิดพลาด ใบรับรองที่ใกล้หมดอายุ ไปจนถึงสถานะการสำรองข้อมูล</p>
+
+<h3>สิ่งที่ได้เมื่อรันเสร็จ</h3>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>ไฟล์</th><th>ใช้ทำอะไร</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">PM-Report.html</td><td>รายงานที่ส่งให้ผู้ใช้ เปิดได้ทุกเครื่อง ไม่ต้องติดตั้งอะไร ไม่ต้องต่อเน็ต สั่งพิมพ์เป็น PDF ได้</td></tr>
+    <tr><td class="mono">PM-Data.json</td><td>ข้อมูลดิบทั้งหมดของรอบนั้น เก็บไว้เทียบย้อนหลังหรือส่งต่อระบบอื่น</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>ทั้งสองไฟล์อยู่ที่ <code>Output\&lt;ชื่อเครื่อง&gt;_&lt;วันเวลา&gt;\</code> แต่ละรอบแยกโฟลเดอร์กัน ไม่ทับกัน
+(ถ้าใช้<a href="#s4">แบบไฟล์เดียว</a> โฟลเดอร์รายงานจะอยู่ข้างตัวไฟล์โดยตรง ไม่มีชั้น <code>Output\</code> คั่น)</p>
+
+<div class="callout c-info">
+  <div class="t">ไม่ต้องติดตั้งอะไรบนเครื่องแม่ข่าย</div>
+  <p>เครื่องมือทำงานด้วย PowerShell 5.1 ที่ติดมากับ Windows อยู่แล้ว ไม่ต้องลง module เพิ่ม
+  ไม่ต้องต่ออินเทอร์เน็ต คัดลอกโฟลเดอร์ไปวางแล้วรันได้เลย และลบทิ้งได้ทันทีเมื่อเลิกใช้</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+<h2><span class="n">2</span>อ่านค่าอย่างเดียว ไม่แก้ไขระบบ</h2>
+
+<div class="callout c-ok">
+  <div class="t">เครื่องมือนี้ไม่เปลี่ยนค่าใด ๆ บนเครื่องแม่ข่าย</div>
+  <p>ทุกหัวข้อเป็นการอ่านสถานะเท่านั้น สิ่งเดียวที่เหลือไว้บนเครื่องคือโฟลเดอร์รายงาน</p>
+</div>
+
+<ul>
+  <li>ไม่ตั้งค่า ไม่แก้ registry ไม่แตะ Group Policy</li>
+  <li>ไม่เริ่ม ไม่หยุด ไม่แก้ไขบริการใด ๆ</li>
+  <li>ไม่ติดตั้งอะไร ไม่ดาวน์โหลดอะไร</li>
+  <li><strong>ไม่รีสตาร์ทเครื่อง</strong> และไม่สั่งอะไรที่ทำให้บริการสะดุด</li>
+</ul>
+
+<h3>สองหัวข้อที่ปิดไว้เป็นค่าเริ่มต้น</h3>
+<p>เป็นเพียงสองหัวข้อที่ต้องติดต่อออกนอกเครื่อง จึงปิดไว้ก่อนเพื่อความปลอดภัย</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th class="mono">รหัส</th><th>ทำอะไร</th><th>ทำไมถึงปิดไว้</th><th class="mono">เปิดเฉพาะครั้ง</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">WU</td><td>ถาม WSUS หรือ Microsoft Update ว่ามีรายการปรับปรุงอะไรค้างติดตั้ง</td>
+        <td>ใช้เวลานานมาก และค้างได้บนเครือข่ายปิด ทดสอบแล้วค้างเกิน 10 นาที</td><td class="mono">-Only WU</td></tr>
+    <tr><td class="mono">CONN</td><td>ทดสอบ ping ไปยังเกตเวย์และเซิร์ฟเวอร์ชื่อโดเมนทุกตัว</td>
+        <td>ถ้าหน่วยงานมีอุปกรณ์ IPS/IDS อาจมองว่าเป็นการสแกนแล้วบล็อกเครื่อง</td><td class="mono">-Only CONN</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>อีก 13 หัวข้อที่เหลือเป็นการอ่านค่าในเครื่องล้วน ๆ <strong>ไม่ส่งแพ็กเก็ตออกนอกเครื่องเลยแม้แต่แพ็กเก็ตเดียว</strong></p>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+<h2><span class="n">3</span>เริ่มใช้งาน</h2>
+
+<ol class="steps">
+  <li>
+    <div class="h">คัดลอกโฟลเดอร์ไปวางบนเครื่องแม่ข่าย</div>
+    <p>คัดลอกโฟลเดอร์ <code>PMtools</code> ทั้งโฟลเดอร์ ไม่ต้องแยกไฟล์ วางที่ไหนก็ได้ที่เขียนไฟล์ได้ เช่น <code>D:\PMtools</code></p>
+    <p>ถ้าได้มาเป็น<strong>ไฟล์เดียว</strong>ชื่อ <span class="mono">PMtools-1.0.0.cmd</span> ให้ข้ามไป<a href="#s4">หัวข้อที่ 4</a> แทน</p>
+  </li>
+  <li>
+    <div class="h">แก้ชื่อหน่วยงาน (ทำครั้งเดียว)</div>
+    <p>เปิด <code>Config\settings.json</code> ด้วย Notepad แล้วแก้สามค่านี้ ชื่อที่ใส่จะไปขึ้นหัวรายงาน</p>
+<pre><code>"Organization": {
+  "NameTh": "กรมตัวอย่าง กระทรวงตัวอย่าง",
+  "DepartmentTh": "ศูนย์เทคโนโลยีสารสนเทศ"
+},
+"Report": {
+  "PreparedBy": "ชื่อผู้ตรวจสอบ"
+}</code></pre>
+  </li>
+  <li>
+    <div class="h">ดับเบิลคลิก <span class="mono">Run-PM.cmd</span></div>
+    <p>ระบบจะขอสิทธิ์ผู้ดูแลระบบ ให้กดอนุญาต จากนั้นจะขึ้นเมนูให้เลือกเวลาเก็บข้อมูล</p>
+  </li>
+  <li>
+    <div class="h">เลือกจากเมนู แล้วรอ</div>
+    <p>ถ้าต้องการรายงานเร็ว ๆ กด <code>Enter</code> เฉย ๆ ได้เลย (= ตรวจทันที ไม่เก็บกราฟ)
+    เมื่อเสร็จ รายงานจะเปิดขึ้นเองในเบราว์เซอร์</p>
+  </li>
+  <li>
+    <div class="h">บันทึกเป็น PDF เพื่อแนบหนังสือ</div>
+    <p>ในเบราว์เซอร์กด <code>Ctrl + P</code> แล้วเลือกปลายทางเป็น <strong>Save as PDF</strong>
+    สีและเส้นตารางจะติดไปครบ ไม่ต้องจัดหน้าเพิ่ม</p>
+  </li>
+</ol>
+
+<div class="callout c-warn">
+  <div class="t">ควรรันด้วยสิทธิ์ผู้ดูแลระบบ</div>
+  <p>ถ้ารันโดยไม่มีสิทธิ์ เครื่องมือจะไม่หยุดทำงาน แต่บางหัวข้อจะได้ข้อมูลไม่ครบ
+  และจะมีแถบเตือนสีเหลืองแสดงไว้ในรายงานอย่างชัดเจน เพื่อไม่ให้ผู้อ่านเข้าใจผิดว่าข้อมูลสมบูรณ์แล้ว
+  การใช้ <code>Run-PM.cmd</code> จะขอสิทธิ์ให้เองอยู่แล้ว</p>
+</div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+<h2><span class="n">4</span>แบบไฟล์เดียว</h2>
+
+<p>นอกจากแบบโฟลเดอร์ในหัวข้อที่แล้ว PMtools ยังแจกได้อีกแบบหนึ่งคือ <strong>ไฟล์เดียวจบ</strong>
+ขนาดราว 95 KB ที่รวมทุกอย่างไว้ข้างในหมดแล้ว เหมาะกับตอนส่งทางอีเมล
+หรือตอนที่เครื่องแม่ข่ายเข้าถึงได้จำกัดจนคัดลอกทั้งโฟลเดอร์ไม่สะดวก</p>
+
+<h3>ดูอย่างไรว่าได้แบบไหนมา</h3>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>ถ้าได้มาเป็น</th><th>ให้ทำอย่างไร</th></tr></thead>
+  <tbody>
+    <tr><td>โฟลเดอร์ <span class="mono">PMtools</span> ที่มีไฟล์หลายสิบไฟล์</td>
+        <td>ดับเบิลคลิก <span class="mono">Run-PM.cmd</span> ตาม<a href="#s3">หัวข้อที่ 3</a></td></tr>
+    <tr><td>ไฟล์เดียวชื่อ <span class="mono">PMtools-1.0.0.cmd</span></td>
+        <td>ดับเบิลคลิกไฟล์นั้นได้เลย ไม่ต้องมีอะไรอยู่ข้าง ๆ</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>ทั้งสองแบบใช้งานเหมือนกันทุกอย่าง เมนูเดียวกัน หัวข้อที่ตรวจชุดเดียวกัน รายงานหน้าตาเดียวกัน
+ต่างกันแค่ที่วางรายงานเท่านั้น</p>
+
+<h3>วิธีใช้</h3>
+<ol class="steps">
+  <li>
+    <div class="h">วางไฟล์ในโฟลเดอร์ที่เขียนไฟล์ได้</div>
+    <p>เช่น <span class="mono">D:\ตรวจเครื่อง\</span> หรือหน้า Desktop ก็ได้
+    ไม่ต้องเอาอะไรไปด้วย ไม่ต้องแตกไฟล์ก่อน</p>
+  </li>
+  <li>
+    <div class="h">ถ้าได้ไฟล์มาทางอีเมลหรือดาวน์โหลด ให้ปลดล็อกก่อน</div>
+    <p>Windows จะติดเครื่องหมายไว้ว่าไฟล์มาจากเครื่องอื่น
+    ให้คลิกขวาที่ไฟล์ &rarr; <strong>Properties</strong> &rarr; ติ๊ก <strong>Unblock</strong> ที่มุมล่าง &rarr; <strong>OK</strong>
+    ถ้าคัดลอกมาทาง USB หรือ share ภายในหน่วยงาน มักไม่ต้องทำขั้นนี้</p>
+  </li>
+  <li>
+    <div class="h">ดับเบิลคลิก</div>
+    <p>ระบบจะขอสิทธิ์ผู้ดูแลระบบ ให้กดอนุญาต จากนั้นจะขึ้นเมนูเดียวกับแบบโฟลเดอร์</p>
+  </li>
+  <li>
+    <div class="h">เลือกจากเมนู แล้วรอ</div>
+    <p>กด <code>Enter</code> เฉย ๆ ได้เลย (= ตรวจทันที ไม่เก็บกราฟ)
+    เมื่อเสร็จ รายงานจะเปิดขึ้นเองในเบราว์เซอร์</p>
+  </li>
+</ol>
+
+<h3>รายงานไปอยู่ที่ไหน</h3>
+
+<p>โฟลเดอร์รายงานจะโผล่ <strong>ข้างตัวไฟล์โดยตรง</strong> วางไฟล์ไว้ที่ไหน รายงานก็อยู่ตรงนั้น</p>
+
+<pre><code>D:\ตรวจเครื่อง\
+    PMtools-1.0.0.cmd
+    SRV-APP01_20260722-1305\      &lt;- รอบนี้
+        PM-Report.html
+        PM-Data.json
+    SRV-APP01_20260721-0930\      &lt;- รอบก่อน แยกโฟลเดอร์ ไม่ทับกัน</code></pre>
+
+<p>ต่างจากแบบโฟลเดอร์ตรงที่ไม่มีชั้น <span class="mono">Output\</span> คั่น
+เพราะตัวโปรแกรมทำงานอยู่ในโฟลเดอร์ชั่วคราวที่ถูกลบทิ้งเมื่อรันเสร็จ จึงต้องส่งรายงานออกมาไว้ข้างนอก</p>
+
+<div class="callout c-warn">
+  <div class="t">ถ้าวางไฟล์ไว้ในที่ที่เขียนไม่ได้</div>
+  <p>เช่นวางบน share แบบอ่านอย่างเดียว หรือ USB ที่ล็อกกันเขียนไว้
+  เครื่องมือจะไม่หยุดทำงาน แต่จะย้ายไปเขียนรายงานลงโฟลเดอร์ชั่วคราวของ Windows แทน
+  แล้วแจ้งที่อยู่จริงไว้บนหน้าจอ <strong>ให้อ่านบรรทัด <span class="mono">Report :</span> ตอนจบเสมอ</strong></p>
+</div>
+
+<h3>แก้ชื่อหน่วยงานและเกณฑ์เตือน</h3>
+
+<p>ค่าตั้งต้นทั้งหมดถูกฝังอยู่ในไฟล์ ถ้าต้องการแก้ ให้ดึงออกมาก่อนหนึ่งครั้ง
+โดยเปิด Command Prompt ที่โฟลเดอร์นั้นแล้วสั่ง</p>
+
+<pre><code>PMtools-1.0.0.cmd -ExtractConfig</code></pre>
+
+<p>จะได้โฟลเดอร์ <span class="mono">Config\</span> ออกมาวางข้างไฟล์ แก้ <span class="mono">settings.json</span>
+ด้วย Notepad ตาม<a href="#s9">หัวข้อที่ 9</a> ได้เลย รอบถัดไปเครื่องมือจะหยิบค่าที่แก้ไว้ไปใช้เอง
+ไม่ต้องสั่งอะไรเพิ่ม และจะขึ้นบรรทัด <span class="mono">Config override</span> บอกให้ทราบว่าใช้ค่าที่แก้แล้ว</p>
+
+<div class="callout c-info">
+  <div class="t">ไฟล์ไหนไม่ได้แก้ ลบทิ้งได้</div>
+  <p>ใน <span class="mono">Config\</span> ที่ดึงออกมามีสามไฟล์ ถ้าแก้แค่ <span class="mono">settings.json</span>
+  จะลบอีกสองไฟล์ทิ้งก็ได้ เฉพาะไฟล์ที่หายไปเครื่องมือจะใช้ของเดิมที่ฝังไว้ข้างในแทน</p>
+</div>
+
+<h3>สั่งเฉพาะบางหัวข้อ</h3>
+
+<p>ใช้สวิตช์ชุดเดียวกับ<a href="#s10">หัวข้อที่ 10</a> ได้ทั้งหมด เพียงเรียกผ่านชื่อไฟล์นี้แทน</p>
+
+<pre><code>PMtools-1.0.0.cmd -Only DISK,CERT
+PMtools-1.0.0.cmd -Skip EVT
+PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
+
+<div class="callout c-ok">
+  <div class="t">ยังอ่านค่าอย่างเดียวเหมือนเดิมทุกประการ</div>
+  <p>ไฟล์เดียวนี้เป็นเพียงภาชนะ ข้างในคือสคริปต์ชุดเดิมทุกบรรทัด ไม่ได้เขียนขึ้นใหม่
+  ตอนรันจะแตกตัวเองลงโฟลเดอร์ชั่วคราวของ Windows เรียกสคริปต์เดิม
+  แล้ว<strong>ลบโฟลเดอร์นั้นทิ้งเมื่อจบเสมอ</strong> รวมถึงตอนที่มีหัวข้อใดทำงานพลาด
+  สิ่งเดียวที่เหลือไว้บนเครื่องคือโฟลเดอร์รายงาน</p>
+</div>
+
+<h3>สำหรับผู้ดูแลเครื่องมือ</h3>
+
+<p>ไฟล์นี้สร้างจากโฟลเดอร์ต้นฉบับด้วยคำสั่งเดียว รายละเอียดอยู่ใน <span class="mono">README.md</span>
+หัวข้อ <em>แจกแบบไฟล์เดียว</em></p>
+
+<pre><code>.\Build-PMSingle.ps1</code></pre>
+
+<p><strong>ห้ามแก้ไฟล์ที่ได้ด้วยมือ</strong> ถ้าต้องแก้อะไรให้แก้ที่โฟลเดอร์ต้นฉบับแล้วสั่งสร้างใหม่
+เพราะขั้นตอนสร้างไม่ได้แปลงโค้ดใด ๆ เพิ่มหัวข้อตรวจใหม่แล้วสั่งสร้างซ้ำได้ทันที</p>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+<h2><span class="n">5</span>เมนูเลือกเวลาเก็บข้อมูล</h2>
+
+<p>เมื่อดับเบิลคลิก <code>Run-PM.cmd</code> จะเห็นหน้านี้ก่อน</p>
+
+<pre><code>==============================================================
+  PMtools 1.0.0 - Preventive Maintenance
+  Server: SRV-APP01      2026-07-22 11:15
+==============================================================
+
+  Existing sample data: 180 samples, collected 09:33 on 2026-07-22
+                        option 1 will still chart it.
+
+  Collect CPU / memory samples before the assessment?
+
+   [1]  No sampling - assess now                 (about 10 s)
+   [2]  Sample 15 minutes, then assess           (15 min, finishes about 11:30)
+   [3]  Sample 30 minutes, then assess           (30 min, finishes about 11:45)
+   [4]  Sample 60 minutes, then assess           (60 min, finishes about 12:15)
+   [5]  Sample for a custom duration...
+   [6]  Sample only - do not build a report
+
+   [Q]  Quit
+
+  Choice [1]:</code></pre>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th class="mono">ตัวเลือก</th><th>ใช้เมื่อไร</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">1</td><td>ต้องการรายงานเร็ว ใช้ในการตรวจตามรอบทั่วไป <strong>กด Enter เฉย ๆ ก็ได้ตัวเลือกนี้</strong></td></tr>
+    <tr><td class="mono">2 – 4</td><td>ต้องการดูว่าภาระงานสูงต่อเนื่องจริงหรือแค่กระชากชั่วครู่ ระบบจะเก็บข้อมูลก่อนแล้วค่อยตรวจ</td></tr>
+    <tr><td class="mono">5</td><td>กำหนดเวลาเก็บเอง ใส่ได้ตั้งแต่ 1 ถึง 1440 นาที</td></tr>
+    <tr><td class="mono">6</td><td>เก็บข้อมูลอย่างเดียว ยังไม่สร้างรายงาน เหมาะกับการเก็บช่วงที่ระบบมีภาระงานจริงไว้ก่อน แล้วค่อยทำรายงานทีหลัง</td></tr>
+    <tr><td class="mono">Q</td><td>ออกโดยไม่ทำอะไร</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>รายละเอียดที่ควรทราบ</h3>
+<ul>
+  <li>แต่ละตัวเลือก <strong>บอกเวลาที่จะเสร็จ</strong> ไว้ให้แล้ว จะได้กะเวลาถูกว่ารอไหว</li>
+  <li>ถ้าเคยเก็บข้อมูลไว้แล้วและยังไม่เกิน 24 ชั่วโมง เมนูจะแจ้งให้ทราบด้านบน
+      <strong>เลือกตัวเลือก 1 ก็ยังได้กราฟอยู่ดี ไม่ต้องเก็บซ้ำ</strong></li>
+  <li>ระหว่างเก็บข้อมูลจะมีแถบความคืบหน้าแสดงจำนวนตัวอย่างและค่าล่าสุด
+      <strong>กด <code>Ctrl + C</code> หยุดกลางคันได้</strong> ตัวอย่างที่เก็บไปแล้วจะไม่หาย
+      เพราะเขียนลงไฟล์ทุกครั้งที่เก็บ</li>
+  <li>เมนูเป็นภาษาอังกฤษเพราะหน้าจอ console ของ Windows Server ส่วนใหญ่ไม่มีฟอนต์ภาษาไทย
+      จะแสดงเป็นกล่องหรือเครื่องหมายคำถาม ส่วนตัวรายงาน HTML เป็นภาษาไทยเต็มรูปแบบตามปกติ</li>
+</ul>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+<h2><span class="n">6</span>วิธีอ่านรายงาน</h2>
+
+<h3>รายงานมี 3 ส่วน</h3>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>ส่วน</th><th>สำหรับใคร</th><th>บอกอะไร</th></tr></thead>
+  <tbody>
+    <tr><td><strong>สรุปผลสำหรับผู้บริหาร</strong></td><td>ผู้บริหาร ผู้อนุมัติ</td>
+        <td>นับจำนวนหัวข้อตามระดับ พร้อมประโยคสรุปภาพรวมหนึ่งย่อหน้า อ่านแค่ส่วนนี้ก็เข้าใจสถานการณ์แล้ว</td></tr>
+    <tr><td><strong>ภาพรวมรายหัวข้อ</strong></td><td>ผู้ตรวจสอบ หัวหน้างาน</td>
+        <td>ตารางหัวข้อทั้งหมด สถานะ และสรุปย่อว่าพบอะไร คลิกที่ชื่อหัวข้อเพื่อกระโดดไปดูรายละเอียด</td></tr>
+    <tr><td><strong>รายละเอียดผลการตรวจสอบ</strong></td><td>เจ้าหน้าที่เทคนิค</td>
+        <td>ตารางข้อมูลจริงของแต่ละหัวข้อ เช่น รายไดรฟ์ รายบริการ รายใบรับรอง</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>ความหมายของสถานะ</h3>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>สถานะ</th><th>หมายความว่า</th><th>ควรทำอย่างไร</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge b-CRIT"><span class="g">&#10007;</span>วิกฤต / Critical</span></td>
+        <td>พบสภาพที่กระทบการให้บริการแล้วหรือกำลังจะกระทบ</td>
+        <td>เร่งดำเนินการแก้ไข ไม่ควรรอรอบบำรุงรักษาถัดไป</td></tr>
+    <tr><td><span class="badge b-WARN"><span class="g">&#9650;</span>ควรเฝ้าระวัง / Warning</span></td>
+        <td>ยังไม่กระทบการให้บริการ แต่เกินเกณฑ์ที่กำหนดไว้</td>
+        <td>วางแผนแก้ไขในรอบบำรุงรักษาถัดไป</td></tr>
+    <tr><td><span class="badge b-OK"><span class="g">&#10003;</span>ปกติ / Normal</span></td>
+        <td>อยู่ในเกณฑ์ปกติทั้งหมด</td>
+        <td>ไม่ต้องดำเนินการ</td></tr>
+    <tr><td><span class="badge b-INFO"><span class="g">&#9679;</span>ข้อมูล / Information</span></td>
+        <td>ข้อมูลประกอบการวิเคราะห์ ไม่มีเกณฑ์ตัดสิน</td>
+        <td>ใช้ประกอบเมื่อต้องวินิจฉัยปัญหา</td></tr>
+    <tr><td><span class="badge b-ERROR"><span class="g">!</span>ตรวจไม่สำเร็จ / Check Failed</span></td>
+        <td>หัวข้อนั้นอ่านข้อมูลไม่ได้ มักเกิดจากสิทธิ์ไม่พอ</td>
+        <td>ลองรันใหม่ด้วยสิทธิ์ผู้ดูแลระบบ <strong>อย่าตีความว่าปกติ</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout c-info">
+  <div class="t">สถานะไม่ได้บอกด้วยสีอย่างเดียว</div>
+  <p>ทุกป้ายสถานะมีทั้งสี สัญลักษณ์ และข้อความกำกับ จึงอ่านได้ถูกต้องแม้พิมพ์ขาวดำ
+  หรือผู้อ่านมีภาวะตาบอดสี</p>
+</div>
+
+<h3>เรื่องวันที่</h3>
+<p>หัวรายงานแสดงวันที่เป็น <strong>พ.ศ.</strong> คู่กับ ค.ศ. ส่วนวันที่ในตารางข้อมูลใช้รูปแบบ
+<code>yyyy-MM-dd</code> ซึ่งเป็น <strong>ค.ศ.</strong> เพราะช่องตารางมีค่าเดียวแต่มีผู้อ่านสองภาษา
+ถ้าใส่ 2569 ลอย ๆ โดยไม่กำกับจะกำกวมสำหรับผู้อ่านอีกฝั่ง</p>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+<h2><span class="n">7</span>กราฟแนวโน้ม CPU และหน่วยความจำ</h2>
+
+<p>หัวข้อ <code>PERF</code> เป็นการอ่านค่า ณ วินาทีที่ตรวจ ซึ่งตอบไม่ได้ว่าภาระงานสูงต่อเนื่องหรือแค่กระชากชั่วครู่
+ถ้าต้องการคำตอบนั้น ให้เลือกเก็บข้อมูลจากเมนูก่อน แล้วหัวข้อ <code>TREND</code> จะแสดงกราฟให้เอง</p>
+
+<h3>กราฟบอกอะไร</h3>
+<ul>
+  <li>เส้นสีน้ำเงินคือหน่วยประมวลผล เส้นสีเขียวคือหน่วยความจำที่ใช้ ทั้งคู่เป็นเปอร์เซ็นต์บนแกนเดียวกัน</li>
+  <li>เลื่อนเมาส์ไปบนกราฟจะเห็นค่าของทุกเส้น ณ เวลานั้น</li>
+  <li>ใต้กราฟมีตารางสรุป <strong>ต่ำสุด / เฉลี่ย / เปอร์เซ็นไทล์ที่ 95 / สูงสุด</strong></li>
+</ul>
+
+<div class="callout c-info">
+  <div class="t">ทำไมตัดสินด้วยเปอร์เซ็นไทล์ที่ 95 ไม่ใช่ค่าสูงสุด</div>
+  <p>การที่ CPU กระชากถึง 100% เพียงวินาทีเดียวเป็นเรื่องปกติของเครื่องแม่ข่ายทุกเครื่อง
+  ถ้าใช้ค่าสูงสุดตัดสินจะขึ้นเตือนแทบทุกครั้งจนไม่มีความหมาย
+  แต่ถ้าเปอร์เซ็นไทล์ที่ 95 อยู่ที่ 90% แปลว่าภาระงานสูงจริงเกือบตลอดเวลา ซึ่งเป็นปัญหาด้านความจุที่ต้องแก้</p>
+</div>
+
+<h3>ข้อมูลที่เก็บไว้</h3>
+<ul>
+  <li>เก็บเป็นไฟล์ CSV ที่ <code>Output\_Perf\</code> <strong>เปิดด้วย Excel ได้โดยตรง</strong> ถ้าอยากทำกราฟเอง</li>
+  <li>ตอนสร้างรายงาน ระบบจะหยิบไฟล์ล่าสุดมาใช้ ถ้าไฟล์เก่าเกิน 24 ชั่วโมงจะไม่นำมาแสดง
+      เพราะไม่สะท้อนสภาพปัจจุบันแล้ว</li>
+  <li>ถ้ายังไม่เคยเก็บ หัวข้อนี้จะขึ้นเป็น <span class="badge b-INFO"><span class="g">&#9679;</span>ข้อมูล</span>
+      พร้อมบอกวิธีเก็บ ไม่ถือเป็นข้อผิดพลาด</li>
+</ul>
+
+<p><strong>ต้นทุนการเก็บ</strong> — แต่ละตัวอย่างใช้เวลาประมาณ 0.4 วินาที ที่ความถี่ 10 วินาที
+จึงใช้ทรัพยากรราว 4% ของหนึ่งคอร์ เป็นการเฝ้าดูภาระงานโดยแทบไม่เพิ่มภาระเอง</p>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+<h2><span class="n">8</span>หัวข้อที่ตรวจทั้งหมด</h2>
+
+<p>เกณฑ์ด้านล่างเป็นค่าเริ่มต้น ปรับได้ทั้งหมดใน <code>Config\settings.json</code></p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th class="mono">รหัส</th><th>หัวข้อ</th><th>เกณฑ์เตือน</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">SYSTEM</td><td>ข้อมูลระบบและเวลาทำงานต่อเนื่อง</td><td>เปิดต่อเนื่องเกิน 90 วัน</td></tr>
+    <tr><td class="mono">DISK</td><td>พื้นที่จัดเก็บข้อมูล</td><td>ว่างน้อยกว่า 20% หรือ 20 GB (วิกฤตที่ 10% หรือ 10 GB)</td></tr>
+    <tr><td class="mono">PERF</td><td>หน่วยประมวลผลและหน่วยความจำ ณ ขณะตรวจ</td><td>CPU เกิน 80% หรือหน่วยความจำว่างต่ำกว่า 15%</td></tr>
+    <tr><td class="mono">TREND</td><td>กราฟแนวโน้มตามช่วงเวลา</td><td>เปอร์เซ็นไทล์ที่ 95 เกินเกณฑ์เดียวกับ PERF (ต้องเก็บข้อมูลก่อน)</td></tr>
+    <tr><td class="mono">PROC</td><td>โปรเซสที่ใช้ทรัพยากรสูงสุด 10 อันดับ</td><td>ข้อมูลประกอบ ไม่มีเกณฑ์</td></tr>
+    <tr><td class="mono">SVC</td><td>สถานะบริการของระบบ</td><td>บริการที่ตั้งเริ่มอัตโนมัติแต่หยุดอยู่ หรือบริการในรายการเฝ้าระวังที่หยุด</td></tr>
+    <tr><td class="mono">EVT</td><td>บันทึกเหตุการณ์ของระบบ</td><td>มีเหตุการณ์ระดับผิดพลาดหรือวิกฤตในช่วง 7 วัน</td></tr>
+    <tr><td class="mono">HOTFIX</td><td>ประวัติการติดตั้งรายการปรับปรุง</td><td>ไม่ได้ติดตั้งรายการปรับปรุงเกิน 60 วัน</td></tr>
+    <tr><td class="mono">AV</td><td>ระบบป้องกันไวรัสและมัลแวร์</td><td>ปิดการป้องกันแบบเรียลไทม์ หรือฐานข้อมูลไวรัสเก่าเกิน 3 วัน</td></tr>
+    <tr><td class="mono">BACKUP</td><td>การสำรองข้อมูล</td><td>สำรองล่าสุดเกิน 7 วัน หรือพบรายการที่ล้มเหลว</td></tr>
+    <tr><td class="mono">CERT</td><td>ใบรับรองอิเล็กทรอนิกส์</td><td>หมดอายุภายใน 30 วัน (วิกฤตที่ 7 วัน)</td></tr>
+    <tr><td class="mono">TIME</td><td>การเทียบเวลามาตรฐาน</td><td>เครื่องไม่ได้เทียบเวลากับแหล่งอ้างอิง</td></tr>
+    <tr><td class="mono">NET</td><td>อุปกรณ์เครือข่ายและการตั้งค่า</td><td>ไม่มีการ์ดใดกำหนดเกตเวย์หรือ DNS เลย</td></tr>
+    <tr><td class="mono">REBOOT</td><td>สถานะการรอเริ่มระบบใหม่</td><td>มีรายการค้างรอการรีสตาร์ท</td></tr>
+    <tr><td class="mono">CONN</td><td>การเชื่อมต่อเครือข่าย</td><td>ping ไม่ผ่าน — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
+    <tr><td class="mono">WU</td><td>รายการปรับปรุงที่ค้างติดตั้ง</td><td>มีรายการค้าง — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+<h2><span class="n">9</span>การตั้งค่า</h2>
+
+<p>ไฟล์ตั้งค่าอยู่ในโฟลเดอร์ <code>Config\</code> ทั้งหมด แก้ด้วย Notepad ได้เลย
+<strong>แก้แล้วมีผลทันทีในการรันครั้งถัดไป ไม่ต้องแก้สคริปต์</strong></p>
+
+<h3>settings.json — เกณฑ์เตือนและข้อมูลหน่วยงาน</h3>
+<p>เกณฑ์เตือนทุกค่าอยู่ในไฟล์นี้ที่เดียว ไม่มีเกณฑ์ไหนถูกเขียนตายไว้ในสคริปต์</p>
+
+<pre><code>"DiskFreePercent": { "Warn": 20, "Crit": 10, "Direction": "Lower" }</code></pre>
+
+<p><code>Direction</code> บอกว่าค่ามากหรือน้อยแบบไหนคือแย่</p>
+<ul>
+  <li><code>Lower</code> — ยิ่งน้อยยิ่งแย่ เช่น พื้นที่ว่าง จำนวนวันคงเหลือก่อนใบรับรองหมดอายุ</li>
+  <li><code>Higher</code> — ยิ่งมากยิ่งแย่ เช่น การใช้งาน CPU จำนวนวันที่ไม่ได้ติดตั้งรายการปรับปรุง</li>
+</ul>
+
+<p>ค่าอื่นที่ปรับได้บ่อย</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th class="mono">ค่า</th><th>ทำอะไร</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">Report.ShowRecommendations</td><td>แสดงหัวข้อข้อเสนอแนะในรายงานหรือไม่ ค่าเริ่มต้นคือ <code>false</code> เพื่อให้รายงานกระชับ ตั้งเป็น <code>true</code> เพื่อเปิดกลับ</td></tr>
+    <tr><td class="mono">Lookback.EventLogDays</td><td>ย้อนดูบันทึกเหตุการณ์กี่วัน ค่าเริ่มต้น 7</td></tr>
+    <tr><td class="mono">Monitor.DefaultMinutes</td><td>ระยะเวลาเก็บข้อมูลของตัวเลือกที่ 3 ในเมนู ค่าเริ่มต้น 30</td></tr>
+    <tr><td class="mono">Checks.Disabled</td><td>รายการรหัสหัวข้อที่ไม่ต้องการให้รันอัตโนมัติ ค่าเริ่มต้นคือ <code>["WU", "CONN"]</code></td></tr>
+    <tr><td class="mono">Backup.TaskKeywords</td><td>คำค้นชื่องานสำรองข้อมูล ถ้าใช้ระบบสำรองยี่ห้ออื่นให้เพิ่มคำที่นี่</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout c-ok">
+  <div class="t">ข้อเสนอแนะไม่ได้หายไปไหน</div>
+  <p>แม้ปิดการแสดงผลในรายงาน ข้อเสนอแนะฉบับเต็มยังถูกคำนวณและเก็บไว้ใน <code>PM-Data.json</code>
+  ครบทุกครั้ง จึงย้อนไปดูได้ตลอดโดยไม่ต้องรันใหม่</p>
+</div>
+
+<h3>services.json — บริการสำคัญที่ต้องเฝ้าระวัง</h3>
+<p>ใส่ชื่อบริการสำคัญของระบบนั้น ๆ ลงใน <code>Watchlist</code>
+<strong>ถ้าบริการในรายการหยุดทำงานจะถูกจัดเป็นระดับวิกฤต</strong> แทนที่จะเป็นแค่ควรเฝ้าระวัง</p>
+
+<pre><code>"Watchlist": ["W3SVC", "MSSQLSERVER", "SQLSERVERAGENT"]</code></pre>
+
+<p>ถ้าปล่อยว่างไว้ก็ใช้งานได้ทันที เพราะเครื่องมือจะตรวจหาบริการที่ตั้งค่าเริ่มอัตโนมัติแต่หยุดอยู่ให้เองอยู่แล้ว
+ในไฟล์มีตัวอย่างชื่อบริการที่พบบ่อยแยกตามบทบาทของเครื่องให้คัดลอกไปใช้</p>
+
+<div class="callout c-warn">
+  <div class="t">ต้องใส่ชื่อบริการ ไม่ใช่ชื่อที่แสดง</div>
+  <p>ดูชื่อจริงได้ด้วยคำสั่ง <code>Get-Service | Select-Object Name, DisplayName, Status</code>
+  โดยคอลัมน์ <code>Name</code> คือชื่อที่ต้องใส่</p>
+</div>
+
+<h3>i18n.json — ข้อความทุกคำในรายงาน</h3>
+<p>ข้อความทุกคำที่ปรากฏในรายงานอยู่ในไฟล์นี้ ทั้งภาษาไทยและอังกฤษ
+ถ้าต้องการเปลี่ยนสำนวนให้ตรงกับที่หน่วยงานใช้ แก้ที่นี่ได้เลย</p>
+
+<div class="callout c-crit">
+  <div class="t">ห้ามลบหรือสลับลำดับเครื่องหมาย {0} {1}</div>
+  <p>เครื่องหมายเหล่านี้คือช่องเติมค่าที่ระบบจะแทนตัวเลขหรือชื่อลงไป
+  ถ้าลบออกหรือสลับลำดับ ข้อความจะแสดงผิดหรือขึ้นเป็นข้อความดิบ</p>
+</div>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+<h2><span class="n">10</span>สั่งงานจาก PowerShell</h2>
+
+<p>สำหรับผู้ที่ต้องการควบคุมเพิ่มเติม หรือต้องการนำไปตั้งเป็นงานตามกำหนดเวลา
+สามารถสั่งตรงได้โดยไม่ผ่านเมนู</p>
+
+<pre><code>.\Start-PMCheck.ps1                     # ตรวจตามปกติ
+.\Start-PMCheck.ps1 -OpenReport         # ตรวจแล้วเปิดรายงานให้เลย
+.\Start-PMCheck.ps1 -Only DISK,CERT     # ตรวจเฉพาะบางหัวข้อ
+.\Start-PMCheck.ps1 -Skip NET           # ตรวจทุกหัวข้อยกเว้นที่ระบุ
+.\Start-PMCheck.ps1 -MonitorMinutes 30  # เก็บข้อมูล 30 นาทีแล้วตรวจ
+.\Start-PMCheck.ps1 -Only WU            # ตรวจรายการปรับปรุงที่ค้าง (ช้า)
+
+.\Start-PMMonitor.ps1 -Minutes 30       # เก็บข้อมูลอย่างเดียว
+.\Start-PMMonitor.ps1 -Minutes 5 -IntervalSeconds 2   # ปรับความถี่</code></pre>
+
+<h3>รหัสสถานะเมื่อรันจบ</h3>
+<p>ใช้ต่อยอดกับ Scheduled Task หรือระบบเฝ้าระวังได้</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th class="mono">รหัส</th><th>หมายความว่า</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">0</td><td>ปกติทั้งหมด ไม่มีสิ่งที่ต้องดำเนินการ</td></tr>
+    <tr><td class="mono">1</td><td>พบประเด็นที่ควรเฝ้าระวัง</td></tr>
+    <tr><td class="mono">2</td><td>พบประเด็นวิกฤต หรือมีหัวข้อที่ตรวจไม่สำเร็จ</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+<h2><span class="n">11</span>ปัญหาที่พบบ่อย</h2>
+
+<h3>ดับเบิลคลิกแล้วหน้าต่างปิดทันที</h3>
+<p>มักเกิดจากนโยบายการรันสคริปต์ ให้ลองเปิด PowerShell ด้วยสิทธิ์ผู้ดูแลระบบแล้วสั่ง</p>
+<pre><code>powershell -NoProfile -ExecutionPolicy Bypass -File "D:\PMtools\Show-PMMenu.ps1"</code></pre>
+<p>ข้อความผิดพลาดที่ขึ้นจะบอกสาเหตุที่แท้จริง</p>
+
+<h3>ได้ไฟล์เดียวมา ดับเบิลคลิกแล้วขึ้นหน้าต่างสีฟ้าว่า Windows protected your PC</h3>
+<p>เป็นเพราะไฟล์ถูกติดเครื่องหมายว่ามาจากเครื่องอื่น ให้กด <strong>More info</strong> แล้ว
+<strong>Run anyway</strong> หรือจัดการให้จบครั้งเดียวด้วยการคลิกขวาที่ไฟล์ &rarr;
+<strong>Properties</strong> &rarr; ติ๊ก <strong>Unblock</strong> &rarr; <strong>OK</strong>
+ก่อนดับเบิลคลิก ดู<a href="#s4">หัวข้อที่ 4</a></p>
+
+<h3>ได้ไฟล์เดียวมา รันแล้วหาโฟลเดอร์รายงานไม่เจอ</h3>
+<p>ตามปกติโฟลเดอร์รายงานจะอยู่ข้างตัวไฟล์ ถ้าไม่เจอ แปลว่าที่วางไฟล์นั้นเขียนไม่ได้
+เครื่องมือจึงย้ายไปเขียนที่โฟลเดอร์ชั่วคราวแทน ให้อ่านบรรทัด <code>Report :</code>
+บนหน้าจอตอนจบ ซึ่งบอกที่อยู่จริงไว้ แล้วย้ายไฟล์วางที่เขียนได้ก่อนรันรอบต่อไป</p>
+
+<h3>ภาษาไทยในรายงานเป็นตัวประหลาด</h3>
+<p>เกิดจากเบราว์เซอร์เดาการเข้ารหัสผิด ซึ่งไม่ควรเกิดเพราะไฟล์รายงานฝังข้อมูลการเข้ารหัสไว้แล้ว
+ถ้าเจอ ให้ลองเปิดด้วยเบราว์เซอร์อื่น และตรวจว่าไฟล์ถูกคัดลอกมาครบไม่เสียหายระหว่างทาง</p>
+
+<h3>รายงานขึ้นแถบเตือนสีเหลืองว่าไม่มีสิทธิ์ผู้ดูแลระบบ</h3>
+<p>แปลว่ารันโดยไม่ได้ยกระดับสิทธิ์ ข้อมูลบางหัวข้อจะไม่ครบ ให้ปิดแล้วเปิดใหม่ผ่าน
+<code>Run-PM.cmd</code> ซึ่งจะขอสิทธิ์ให้เอง</p>
+
+<h3>หัวข้อบริการเตือนเยอะเกินไป</h3>
+<p>ในการรันครั้งแรกเป็นเรื่องปกติ เพราะระบบรายงานทุกบริการที่ตั้งค่าให้เริ่มอัตโนมัติแต่หยุดอยู่
+ซึ่งบางตัวถูกปิดโดยตั้งใจ วิธีจัดการคือ <strong>ใส่เฉพาะบริการที่สำคัญจริงลงใน
+<code>Config\services.json</code></strong> บริการเหล่านั้นจะยกระดับเป็นวิกฤต ส่วนที่เหลือยังเป็นแค่ควรเฝ้าระวัง
+ให้ตรวจดูตามสมควร</p>
+
+<h3>หัวข้อการสำรองข้อมูลบอกว่าไม่พบร่องรอย</h3>
+<p>เครื่องมือตรวจจากบันทึกของ Windows Server Backup และงานตามกำหนดเวลาที่ชื่อเข้าเกณฑ์
+ถ้าหน่วยงานใช้ระบบสำรองข้อมูลยี่ห้ออื่น ให้เพิ่มคำค้นใน <code>Backup.TaskKeywords</code>
+หรือหากการสำรองข้อมูลทำจากระบบภายนอกเครื่องนี้ ก็ถือว่าเป็นผลปกติ</p>
+
+<h3>ระหว่างรันแล้วเครือข่ายไม่เสถียร</h3>
+<p>เคยพบอาการนี้บนเครื่องที่ทำ NIC Teaming และได้แก้ไขแล้ว โดยเปลี่ยนไปอ่านข้อมูลเครือข่าย
+ด้วยวิธีที่ไม่แตะไดรเวอร์การ์ดเครือข่าย หากยังพบอาการอยู่ ให้ลองตัดหัวข้อเครือข่ายออกเพื่อยืนยัน</p>
+<pre><code>.\Start-PMCheck.ps1 -Skip NET</code></pre>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+<h2><span class="n">12</span>ข้อจำกัดที่ควรทราบ</h2>
+
+<div class="callout c-warn">
+  <div class="t">ยังไม่ได้ทดสอบบน Windows Server จริง</div>
+  <p>เครื่องมือนี้พัฒนาและทดสอบบน Windows 11 กับ PowerShell 5.1 ซึ่งเป็น PowerShell รุ่นเดียวกับที่ใช้บน
+  Windows Server แต่ยังไม่เคยรันบนเครื่องแม่ข่ายจริง จึงควรทดลองบนเครื่องทดสอบก่อนนำไปใช้กับระบบสำคัญ</p>
+</div>
+
+<p>จุดที่ควรตรวจดูเป็นพิเศษเมื่อนำไปวางบนเครื่องแม่ข่ายครั้งแรก</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th class="mono">หัวข้อ</th><th>สิ่งที่อาจต่างไป</th><th>เครื่องมือรับมืออย่างไร</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">AV</td>
+        <td>แหล่งข้อมูลที่ใช้บน Windows รุ่นทั่วไปไม่มีบน Windows Server</td>
+        <td>มีทางสำรองสามชั้น หากตรวจไม่พบจริง จะรายงานตรง ๆ ว่าตรวจไม่พบ ไม่เดาว่าปลอดภัย</td></tr>
+    <tr><td class="mono">BACKUP</td>
+        <td>บันทึกของ Windows Server Backup มีเฉพาะเมื่อติดตั้งส่วนประกอบนั้นแล้ว</td>
+        <td>รายงานว่า "ไม่พบร่องรอย" ไม่ใช่ "ไม่มีการสำรองข้อมูล" เพราะอาจสำรองจากระบบภายนอก</td></tr>
+    <tr><td class="mono">TIME</td>
+        <td>คำสั่งเทียบเวลาแสดงข้อความตามภาษาของเครื่อง</td>
+        <td>อ่านจากลำดับบรรทัดและตัวเลขแทนข้อความ ถ้าอ่านไม่ได้จะรายงานเป็นข้อมูล ไม่เดาว่าผิดปกติ</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>สิ่งที่เครื่องมือนี้ยังไม่ครอบคลุม</h3>
+<ul>
+  <li>การตรวจตามบทบาทเฉพาะทาง เช่น Active Directory, DNS, DHCP, IIS, SQL Server, Hyper-V</li>
+  <li>การตรวจสอบด้านความมั่นคงปลอดภัยและการปฏิบัติตามมาตรฐาน</li>
+  <li>สถานะอุปกรณ์ฮาร์ดแวร์ เช่น RAID แหล่งจ่ายไฟ อุณหภูมิ</li>
+  <li>การเปรียบเทียบผลย้อนหลังข้ามรอบการตรวจ</li>
+  <li>การเก็บข้อมูลจากหลายเครื่องแบบรวมศูนย์</li>
+</ul>
+
+<p>โครงสร้างของเครื่องมือออกแบบให้เพิ่มหัวข้อใหม่ได้โดยไม่ต้องแก้ไฟล์เดิม
+รายละเอียดสำหรับผู้พัฒนาอยู่ในไฟล์ <code>README.md</code> และ <code>HANDOVER.md</code></p>
+</section>
+
+<footer>
+  คู่มือการใช้งาน PMtools เวอร์ชัน 1.0.0
+</footer>
+
+</div>
+</body>
+</html>

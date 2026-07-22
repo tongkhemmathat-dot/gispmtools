@@ -1,0 +1,20 @@
+﻿{
+  "_comment1": "รายชื่อบริการสำคัญที่ต้องเฝ้าระวัง (watchlist) ถ้าบริการในรายการนี้หยุดทำงาน จะถูกจัดเป็นระดับวิกฤต",
+  "_comment2": "โดยปกติเครื่องมือจะตรวจหาบริการที่ตั้งค่าเริ่มอัตโนมัติแต่หยุดอยู่ให้เองอยู่แล้ว จึงปล่อยรายการนี้ว่างไว้ก็ใช้งานได้ทันที",
+  "_comment3": "ให้ใส่ชื่อบริการ (Service Name) ไม่ใช่ชื่อที่แสดง (Display Name) ดูชื่อจริงได้ด้วยคำสั่ง Get-Service | Select-Object Name, DisplayName, Status",
+
+  "Watchlist": [],
+
+  "_examples": {
+    "_comment": "ตัวอย่างชื่อบริการที่พบบ่อย คัดลอกชื่อที่ต้องการไปใส่ใน Watchlist ด้านบน (ส่วนนี้ไม่มีผลต่อการทำงาน)",
+    "DomainController": ["NTDS", "DNS", "Netlogon", "kdc", "DFSR", "W32Time"],
+    "DhcpServer":       ["DHCPServer"],
+    "FileServer":       ["LanmanServer", "DFSR"],
+    "WebServer":        ["W3SVC", "WAS", "IISADMIN"],
+    "SqlServer":        ["MSSQLSERVER", "SQLSERVERAGENT", "SQLBrowser"],
+    "HyperV":           ["vmms", "vmcompute"],
+    "PrintServer":      ["Spooler"],
+    "Common":           ["WinRM", "Schedule", "EventLog", "Dnscache", "LanmanWorkstation"],
+    "Backup":           ["VSS", "wbengine"]
+  }
+}

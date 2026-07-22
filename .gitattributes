@@ -1,0 +1,10 @@
+# File encoding is load-bearing in this project - see the rules in HANDOVER.md.
+# The .ps1 files must stay pure ASCII, because PowerShell 5.1 reads a .ps1 with
+# no BOM as ANSI; the .json, .md and .html files must keep their UTF-8 BOM, so
+# Notepad on an older server renders the Thai correctly.
+#
+# Pinning the line ending here keeps a clone made on Linux, WSL or a machine
+# with a different core.autocrlf from handing PowerShell a file that differs
+# from the one that was tested. Git only ever rewrites line endings and never
+# touches the BOM, so both rules above survive the round trip either way.
+* text=auto eol=crlf
