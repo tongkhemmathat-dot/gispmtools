@@ -136,14 +136,15 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
     <li><a href="#s2">อ่านค่าอย่างเดียว ไม่แก้ไขระบบ</a></li>
     <li><a href="#s3">เริ่มใช้งาน</a></li>
     <li><a href="#s4">แบบไฟล์เดียว</a></li>
-    <li><a href="#s5">เมนูเลือกเวลาเก็บข้อมูล</a></li>
-    <li><a href="#s6">วิธีอ่านรายงาน</a></li>
-    <li><a href="#s7">กราฟแนวโน้ม CPU และหน่วยความจำ</a></li>
-    <li><a href="#s8">หัวข้อที่ตรวจทั้งหมด</a></li>
-    <li><a href="#s9">การตั้งค่า</a></li>
-    <li><a href="#s10">สั่งงานจาก PowerShell</a></li>
-    <li><a href="#s11">ปัญหาที่พบบ่อย</a></li>
-    <li><a href="#s12">ข้อจำกัดที่ควรทราบ</a></li>
+    <li><a href="#s5">ส่งออกเป็น Word (.docx)</a></li>
+    <li><a href="#s6">เมนูเลือกเวลาเก็บข้อมูล</a></li>
+    <li><a href="#s7">วิธีอ่านรายงาน</a></li>
+    <li><a href="#s8">กราฟแนวโน้ม CPU และหน่วยความจำ</a></li>
+    <li><a href="#s9">หัวข้อที่ตรวจทั้งหมด</a></li>
+    <li><a href="#s10">การตั้งค่า</a></li>
+    <li><a href="#s11">สั่งงานจาก PowerShell</a></li>
+    <li><a href="#s12">ปัญหาที่พบบ่อย</a></li>
+    <li><a href="#s13">ข้อจำกัดที่ควรทราบ</a></li>
   </ol>
 </div>
 
@@ -220,7 +221,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <li>
     <div class="h">คัดลอกโฟลเดอร์ไปวางบนเครื่องแม่ข่าย</div>
     <p>คัดลอกโฟลเดอร์ <code>PMtools</code> ทั้งโฟลเดอร์ ไม่ต้องแยกไฟล์ วางที่ไหนก็ได้ที่เขียนไฟล์ได้ เช่น <code>D:\PMtools</code></p>
-    <p>ถ้าได้มาเป็น<strong>ไฟล์เดียว</strong>ชื่อ <span class="mono">PMtools-1.0.0.cmd</span> ให้ข้ามไป<a href="#s4">หัวข้อที่ 4</a> แทน</p>
+    <p>ถ้าได้มาเป็น<strong>ไฟล์เดียว</strong>ชื่อ <span class="mono">PMtools-1.1.0.cmd</span> ให้ข้ามไป<a href="#s4">หัวข้อที่ 4</a> แทน</p>
   </li>
   <li>
     <div class="h">แก้ชื่อหน่วยงาน (ทำครั้งเดียว)</div>
@@ -272,7 +273,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <tbody>
     <tr><td>โฟลเดอร์ <span class="mono">PMtools</span> ที่มีไฟล์หลายสิบไฟล์</td>
         <td>ดับเบิลคลิก <span class="mono">Run-PM.cmd</span> ตาม<a href="#s3">หัวข้อที่ 3</a></td></tr>
-    <tr><td>ไฟล์เดียวชื่อ <span class="mono">PMtools-1.0.0.cmd</span></td>
+    <tr><td>ไฟล์เดียวชื่อ <span class="mono">PMtools-1.1.0.cmd</span></td>
         <td>ดับเบิลคลิกไฟล์นั้นได้เลย ไม่ต้องมีอะไรอยู่ข้าง ๆ</td></tr>
   </tbody>
 </table>
@@ -310,7 +311,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <p>โฟลเดอร์รายงานจะโผล่ <strong>ข้างตัวไฟล์โดยตรง</strong> วางไฟล์ไว้ที่ไหน รายงานก็อยู่ตรงนั้น</p>
 
 <pre><code>D:\ตรวจเครื่อง\
-    PMtools-1.0.0.cmd
+    PMtools-1.1.0.cmd
     SRV-APP01_20260722-1305\      &lt;- รอบนี้
         PM-Report.html
         PM-Data.json
@@ -331,10 +332,10 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <p>ค่าตั้งต้นทั้งหมดถูกฝังอยู่ในไฟล์ ถ้าต้องการแก้ ให้ดึงออกมาก่อนหนึ่งครั้ง
 โดยเปิด Command Prompt ที่โฟลเดอร์นั้นแล้วสั่ง</p>
 
-<pre><code>PMtools-1.0.0.cmd -ExtractConfig</code></pre>
+<pre><code>PMtools-1.1.0.cmd -ExtractConfig</code></pre>
 
 <p>จะได้โฟลเดอร์ <span class="mono">Config\</span> ออกมาวางข้างไฟล์ แก้ <span class="mono">settings.json</span>
-ด้วย Notepad ตาม<a href="#s9">หัวข้อที่ 9</a> ได้เลย รอบถัดไปเครื่องมือจะหยิบค่าที่แก้ไว้ไปใช้เอง
+ด้วย Notepad ตาม<a href="#s10">หัวข้อที่ 10</a> ได้เลย รอบถัดไปเครื่องมือจะหยิบค่าที่แก้ไว้ไปใช้เอง
 ไม่ต้องสั่งอะไรเพิ่ม และจะขึ้นบรรทัด <span class="mono">Config override</span> บอกให้ทราบว่าใช้ค่าที่แก้แล้ว</p>
 
 <div class="callout c-info">
@@ -345,11 +346,11 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 
 <h3>สั่งเฉพาะบางหัวข้อ</h3>
 
-<p>ใช้สวิตช์ชุดเดียวกับ<a href="#s10">หัวข้อที่ 10</a> ได้ทั้งหมด เพียงเรียกผ่านชื่อไฟล์นี้แทน</p>
+<p>ใช้สวิตช์ชุดเดียวกับ<a href="#s11">หัวข้อที่ 11</a> ได้ทั้งหมด เพียงเรียกผ่านชื่อไฟล์นี้แทน</p>
 
-<pre><code>PMtools-1.0.0.cmd -Only DISK,CERT
-PMtools-1.0.0.cmd -Skip EVT
-PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
+<pre><code>PMtools-1.1.0.cmd -Only DISK,CERT
+PMtools-1.1.0.cmd -Skip EVT
+PMtools-1.1.0.cmd -MonitorMinutes 30</code></pre>
 
 <div class="callout c-ok">
   <div class="t">ยังอ่านค่าอย่างเดียวเหมือนเดิมทุกประการ</div>
@@ -372,12 +373,68 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 
 <!-- 5 -->
 <section id="s5">
-<h2><span class="n">5</span>เมนูเลือกเวลาเก็บข้อมูล</h2>
+<h2><span class="n">5</span>ส่งออกเป็น Word (.docx)</h2>
+
+<p><span class="mono">PM-Report.html</span> เปิดดูและสั่งพิมพ์เป็น PDF ได้อยู่แล้ว
+แต่บางหน่วยงานต้องการไฟล์ Word เพื่อแก้ไขเพิ่มเติมก่อนแนบหนังสือราชการ
+<span class="mono">Export-PMDocxReport.ps1</span> แปลง <span class="mono">PM-Data.json</span> ที่ตรวจไว้แล้ว
+ให้เป็นเอกสาร Word สองภาษาไทย/อังกฤษ หน้าตาเทียบเท่ารายงาน HTML</p>
+
+<div class="callout c-info">
+  <div class="t">เครื่องมือนี้แยกจากตัวตรวจ และรันคนละเครื่องได้</div>
+  <p>ตัวตรวจ (<span class="mono">Start-PMCheck.ps1</span> หรือไฟล์เดียวจาก<a href="#s4">หัวข้อที่ 4</a>)
+  รันบนเครื่องแม่ข่ายที่ต้องการตรวจ อ่านค่าอย่างเดียวไม่ต้องพึ่งโปรแกรมอะไรเพิ่ม
+  ส่วนตัวแปลง Word รันบนเครื่องของผู้ดูแลระบบเอง (เครื่องที่มี Microsoft Word ติดตั้งอยู่)
+  สิ่งที่ต้องย้ายข้ามเครื่องมีแค่ไฟล์ <span class="mono">PM-Data.json</span> ไฟล์เดียว
+  คัดลอกผ่านอีเมล แชร์โฟลเดอร์ หรือ USB ก็ได้</p>
+</div>
+
+<h3>วิธีใช้</h3>
+<ol class="steps">
+  <li>
+    <div class="h">คัดลอก PM-Data.json มาที่เครื่องของตัวเอง</div>
+    <p>ไฟล์นี้อยู่ในโฟลเดอร์รายงานที่ได้จากการตรวจ ข้าง ๆ <span class="mono">PM-Report.html</span> เสมอ</p>
+  </li>
+  <li>
+    <div class="h">เปิด PowerShell ที่โฟลเดอร์ PMtools แล้วสั่ง</div>
+<pre><code>.\Export-PMDocxReport.ps1 -DataPath D:\ผลตรวจ\PM-Data.json -OpenReport</code></pre>
+  </li>
+  <li>
+    <div class="h">ได้ไฟล์ PM-Report.docx</div>
+    <p>สร้างไว้ข้าง ๆ ไฟล์ <span class="mono">PM-Data.json</span> ที่อ่านโดยอัตโนมัติ
+    หรือระบุปลายทางเองด้วย <span class="mono">-OutputPath</span></p>
+<pre><code>.\Export-PMDocxReport.ps1 -DataPath D:\ผลตรวจ\PM-Data.json -OutputPath D:\ส่งราชการ\ฉบับสมบูรณ์.docx</code></pre>
+  </li>
+</ol>
+
+<div class="callout c-warn">
+  <div class="t">ต้องมี Microsoft Word ติดตั้งอยู่บนเครื่องที่รันคำสั่งนี้</div>
+  <p>เครื่องมือสั่งงาน Word ผ่าน COM automation เพื่อสร้างเอกสาร ถ้าไม่มี Word ติดตั้งอยู่
+  จะขึ้นข้อความแจ้งทันทีตั้งแต่เริ่มรัน <strong>ไม่ต้องใช้สิทธิ์ผู้ดูแลระบบ</strong>
+  และไม่ขอยกระดับสิทธิ์ เพราะแค่อ่านไฟล์ที่มีอยู่แล้วกับสั่งงาน Word เท่านั้น ไม่แตะค่าอะไรบนเครื่อง</p>
+</div>
+
+<h3>ชื่อหน่วยงานมาจากไหน</h3>
+<p>ชื่อหน่วยงาน ส่วนงาน ชื่อระบบ และผู้ตรวจสอบ
+<strong>อ่านจาก <span class="mono">Config\settings.json</span> ของเครื่องที่รันตัวแปลงนี้</strong>
+ไม่ใช่จากไฟล์ <span class="mono">PM-Data.json</span> — ไฟล์นั้นไม่ได้เก็บค่ากลุ่มนี้ไว้โดยตั้งใจ
+แก้ค่าที่ <span class="mono">Config\settings.json</span> ตาม<a href="#s10">หัวข้อที่ 10</a> ได้ตามปกติ
+ก่อนรันคำสั่งข้างต้น</p>
+
+<h3>ข้อจำกัดของรุ่นนี้</h3>
+<p>กราฟแนวโน้ม CPU/หน่วยความจำ (จากหัวข้อ TREND ใน<a href="#s7">หัวข้อที่ 7</a>) ยังไม่วาดในเอกสาร Word
+ตารางข้อมูลตัวเลข (ต่ำสุด/เฉลี่ย/เปอร์เซ็นไทล์ที่ 95/สูงสุด) ยังอยู่ครบ เพียงแต่กราฟเส้นแบบโต้ตอบได้
+ยังมีเฉพาะในรายงาน HTML เท่านั้น เอกสาร Word จะมีข้อความกำกับไว้ให้ทราบตรงจุดนั้น</p>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+<h2><span class="n">6</span>เมนูเลือกเวลาเก็บข้อมูล</h2>
 
 <p>เมื่อดับเบิลคลิก <code>Run-PM.cmd</code> จะเห็นหน้านี้ก่อน</p>
 
 <pre><code>==============================================================
-  PMtools 1.0.0 - Preventive Maintenance
+  PMtools 1.1.0 - Preventive Maintenance
   Server: SRV-APP01      2026-07-22 11:15
 ==============================================================
 
@@ -423,9 +480,9 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 </ul>
 </section>
 
-<!-- 6 -->
-<section id="s6">
-<h2><span class="n">6</span>วิธีอ่านรายงาน</h2>
+<!-- 7 -->
+<section id="s7">
+<h2><span class="n">7</span>วิธีอ่านรายงาน</h2>
 
 <h3>รายงานมี 3 ส่วน</h3>
 <div class="tablewrap">
@@ -478,9 +535,9 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 ถ้าใส่ 2569 ลอย ๆ โดยไม่กำกับจะกำกวมสำหรับผู้อ่านอีกฝั่ง</p>
 </section>
 
-<!-- 7 -->
-<section id="s7">
-<h2><span class="n">7</span>กราฟแนวโน้ม CPU และหน่วยความจำ</h2>
+<!-- 8 -->
+<section id="s8">
+<h2><span class="n">8</span>กราฟแนวโน้ม CPU และหน่วยความจำ</h2>
 
 <p>หัวข้อ <code>PERF</code> เป็นการอ่านค่า ณ วินาทีที่ตรวจ ซึ่งตอบไม่ได้ว่าภาระงานสูงต่อเนื่องหรือแค่กระชากชั่วครู่
 ถ้าต้องการคำตอบนั้น ให้เลือกเก็บข้อมูลจากเมนูก่อน แล้วหัวข้อ <code>TREND</code> จะแสดงกราฟให้เอง</p>
@@ -512,9 +569,9 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 จึงใช้ทรัพยากรราว 4% ของหนึ่งคอร์ เป็นการเฝ้าดูภาระงานโดยแทบไม่เพิ่มภาระเอง</p>
 </section>
 
-<!-- 8 -->
-<section id="s8">
-<h2><span class="n">8</span>หัวข้อที่ตรวจทั้งหมด</h2>
+<!-- 9 -->
+<section id="s9">
+<h2><span class="n">9</span>หัวข้อที่ตรวจทั้งหมด</h2>
 
 <p>เกณฑ์ด้านล่างเป็นค่าเริ่มต้น ปรับได้ทั้งหมดใน <code>Config\settings.json</code></p>
 
@@ -543,9 +600,9 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 </div>
 </section>
 
-<!-- 9 -->
-<section id="s9">
-<h2><span class="n">9</span>การตั้งค่า</h2>
+<!-- 10 -->
+<section id="s10">
+<h2><span class="n">10</span>การตั้งค่า</h2>
 
 <p>ไฟล์ตั้งค่าอยู่ในโฟลเดอร์ <code>Config\</code> ทั้งหมด แก้ด้วย Notepad ได้เลย
 <strong>แก้แล้วมีผลทันทีในการรันครั้งถัดไป ไม่ต้องแก้สคริปต์</strong></p>
@@ -607,9 +664,9 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 </div>
 </section>
 
-<!-- 10 -->
-<section id="s10">
-<h2><span class="n">10</span>สั่งงานจาก PowerShell</h2>
+<!-- 11 -->
+<section id="s11">
+<h2><span class="n">11</span>สั่งงานจาก PowerShell</h2>
 
 <p>สำหรับผู้ที่ต้องการควบคุมเพิ่มเติม หรือต้องการนำไปตั้งเป็นงานตามกำหนดเวลา
 สามารถสั่งตรงได้โดยไม่ผ่านเมนู</p>
@@ -638,9 +695,9 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 </div>
 </section>
 
-<!-- 11 -->
-<section id="s11">
-<h2><span class="n">11</span>ปัญหาที่พบบ่อย</h2>
+<!-- 12 -->
+<section id="s12">
+<h2><span class="n">12</span>ปัญหาที่พบบ่อย</h2>
 
 <h3>ดับเบิลคลิกแล้วหน้าต่างปิดทันที</h3>
 <p>มักเกิดจากนโยบายการรันสคริปต์ ให้ลองเปิด PowerShell ด้วยสิทธิ์ผู้ดูแลระบบแล้วสั่ง</p>
@@ -683,9 +740,9 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 <pre><code>.\Start-PMCheck.ps1 -Skip NET</code></pre>
 </section>
 
-<!-- 12 -->
-<section id="s12">
-<h2><span class="n">12</span>ข้อจำกัดที่ควรทราบ</h2>
+<!-- 13 -->
+<section id="s13">
+<h2><span class="n">13</span>ข้อจำกัดที่ควรทราบ</h2>
 
 <div class="callout c-warn">
   <div class="t">ยังไม่ได้ทดสอบบน Windows Server จริง</div>
@@ -726,7 +783,7 @@ PMtools-1.0.0.cmd -MonitorMinutes 30</code></pre>
 </section>
 
 <footer>
-  คู่มือการใช้งาน PMtools เวอร์ชัน 1.0.0
+  คู่มือการใช้งาน PMtools เวอร์ชัน 1.1.0
 </footer>
 
 </div>

@@ -59,6 +59,12 @@ $bundleDirs = @(
     @{ Name = 'Config'; Filter = '*.json' }
 )
 
+# Report.Docx.ps1 needs Microsoft Word and runs on an administrator's own
+# workstation via Export-PMDocxReport.ps1 - it has no part in the read-only
+# server assessment this single file exists to carry, so it is left out
+# rather than riding along unused.
+$bundleExclude = @('Report.Docx.ps1')
+
 # ---------------------------------------------------------------------
 # Stage, zip, encode
 # ---------------------------------------------------------------------
@@ -67,7 +73,7 @@ Write-Host ''
 Write-Host 'PMtools - building the single-file distributable' -ForegroundColor Cyan
 Write-Host ''
 
-$version = '1.0.0'
+$version = '1.1.0'
 try {
     $settings = Get-Content -LiteralPath (Join-Path $PMRoot 'Config\settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($settings.Report.ToolVersion) { $version = [string]$settings.Report.ToolVersion }
@@ -98,7 +104,8 @@ try {
         $dest = Join-Path $stage $dir.Name
         New-Item -ItemType Directory -Path $dest -Force | Out-Null
 
-        $items = @(Get-ChildItem -LiteralPath $src -Filter $dir.Filter -File | Sort-Object Name)
+        $items = @(Get-ChildItem -LiteralPath $src -Filter $dir.Filter -File |
+                   Where-Object { $bundleExclude -notcontains $_.Name } | Sort-Object Name)
         if ($items.Count -eq 0) { throw "Folder $($dir.Name) holds no $($dir.Filter) files." }
 
         foreach ($item in $items) {
