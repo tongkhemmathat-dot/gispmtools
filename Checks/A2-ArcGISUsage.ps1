@@ -230,7 +230,7 @@ function Invoke-PMCheckArcGISUsage {
 
             $chart = New-PMLineChart -XLabels $xLabels `
                 -Series @([pscustomobject]@{ TitleTh = $seriesName.Th; TitleEn = $seriesName.En; Values = $yValues }) `
-                -YMin 0 -YMax $yMax -YUnit '' `
+                -YMin 0 -YMax $yMax -YUnit '' -RoundTicks `
                 -CaptionTh $caption.Th -CaptionEn $caption.En
         }
 

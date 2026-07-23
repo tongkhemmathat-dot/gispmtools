@@ -380,17 +380,26 @@ function New-PMLineChart {
         [double]$YMax = 100,
         [string]$YUnit = '%',
         [string]$CaptionTh = '',
-        [string]$CaptionEn = ''
+        [string]$CaptionEn = '',
+        # Off by default so the existing CPU/Memory chart's 0/25/50/75/100%
+        # gridlines are untouched. On, each gridline value is snapped to the
+        # nearest round number (nearest 100 once YMax reaches 100, nearest 10
+        # below that, nearest whole number below 10) instead of just an even
+        # position between YMin/YMax - meant for count-style charts (request
+        # volumes and the like) where a label like "7400" reads far easier
+        # than the exact-but-arbitrary "7376" an even split would give.
+        [switch]$RoundTicks
     )
     return [pscustomobject]@{
-        Type      = 'line'
-        XLabels   = @($XLabels)
-        Series    = @($Series)
-        YMin      = $YMin
-        YMax      = $YMax
-        YUnit     = $YUnit
-        CaptionTh = $CaptionTh
-        CaptionEn = $CaptionEn
+        Type       = 'line'
+        XLabels    = @($XLabels)
+        Series     = @($Series)
+        YMin       = $YMin
+        YMax       = $YMax
+        YUnit      = $YUnit
+        CaptionTh  = $CaptionTh
+        CaptionEn  = $CaptionEn
+        RoundTicks = [bool]$RoundTicks
     }
 }
 

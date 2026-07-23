@@ -376,7 +376,23 @@ function New-PMChartHtml {
     # reads as false precision the underlying data does not actually have.
     [void]$sb.Append('<g class="grid">')
     $ticks = @()
-    for ($i = 0; $i -le 4; $i++) { $ticks += [math]::Round($yMin + ($range * $i / 4), 0) }
+    if ($chart.PSObject.Properties['RoundTicks'] -and $chart.RoundTicks) {
+        # Snap each gridline to a round number rather than an even position -
+        # opt-in only (see New-PMLineChart), so the CPU/Memory chart's
+        # 0/25/50/75/100% is untouched. The round-to unit itself scales with
+        # the chart's own magnitude: a request-count chart in the tens of
+        # thousands reads better rounded to the nearest 100 than the nearest 1.
+        if     ($yMax -ge 100) { $roundTo = 100 }
+        elseif ($yMax -ge 10)  { $roundTo = 10 }
+        else                   { $roundTo = 1 }
+        for ($i = 0; $i -le 4; $i++) {
+            $raw = $yMin + ($range * $i / 4)
+            $ticks += [math]::Round($raw / $roundTo) * $roundTo
+        }
+    }
+    else {
+        for ($i = 0; $i -le 4; $i++) { $ticks += [math]::Round($yMin + ($range * $i / 4), 0) }
+    }
     foreach ($t in $ticks) {
         $y = [math]::Round(($mT + (1 - (($t - $yMin) / $range)) * $plotH), 1)
         [void]$sb.Append('<line x1="' + $mL + '" y1="' + $y + '" x2="' + $plotR + '" y2="' + $y + '"/>')
