@@ -290,7 +290,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File 'D:\PMtools\Show-PMMenu.ps1'
 ซึ่งทำให้ทดสอบอัตโนมัติไม่ได้ ให้เรียกท่อน PowerShell ตรง ๆ แบบเดียวกับที่ label `:elevated` ทำ
 
 ```powershell
-$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.5.0.cmd'
+$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.6.0.cmd'
 $boot = '$t=[IO.File]::ReadAllText($env:PM_SELF); $m=''#PM''+''TOOLS_PAYLOAD#''; & ([scriptblock]::Create($t.Substring($t.IndexOf($m))))'
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$boot -Only DISK"
 ```
