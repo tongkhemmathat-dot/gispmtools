@@ -15,12 +15,14 @@
 #      validateAllDataItems only tests that registered connections still
 #      answer. Neither writes to the site.
 #
-#  What is deliberately NOT implemented: usage reports. Querying them
-#  requires /usagereports/<name>/data, which needs a report to have been
-#  created on the site first - and creating one is a write. Service
-#  instance statistics from /admin/services/<folder>/report give the same
-#  operational answer (is anything saturated?) through a plain GET, so
-#  that is used instead. See DISTRIBUTION.md.
+#  What is deliberately NOT implemented: creating a usage report. Reading
+#  one that already exists (Checks\A2-ArcGISUsage.ps1, AGSUSAGE) is a plain
+#  GET against /usagereports and /usagereports/<name>/data, and is fine -
+#  but querying a report that has never been created is not possible
+#  without creating it first, and creating one is a write. Service instance
+#  statistics from /admin/services/<folder>/report give a related but
+#  different answer (is anything saturated, per service?) through a plain
+#  GET that never depends on a report existing - see Checks\A1-ArcGISServices.ps1.
 # =====================================================================
 
 # ---------------------------------------------------------------------

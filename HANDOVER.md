@@ -15,12 +15,12 @@
 [tongkhemmathat-dot/gispmtools](https://github.com/tongkhemmathat-dot/gispmtools) (private)
 **push ครบทุก commit แล้ว ไม่มีอะไรค้างใน working tree**
 
-มี **18 หัวข้อตรวจ** โดย 14 หัวข้อรันเป็นค่าเริ่มต้น ใช้เวลาราว 6.5 วินาที
-อีก 4 หัวข้อปิดไว้ (`WU`, `CONN`, `AGS`, `AGSSVC`)
+มี **19 หัวข้อตรวจ** โดย 14 หัวข้อรันเป็นค่าเริ่มต้น ใช้เวลาราว 6.5 วินาที
+อีก 5 หัวข้อปิดไว้ (`WU`, `CONN`, `AGS`, `AGSSVC`, `AGSUSAGE`)
 
 ```powershell
 .\Start-PMCheck.ps1                        # รันปกติ 14 หัวข้อ
-.\Start-PMCheck.ps1 -Only AGS,AGSSVC       # เฉพาะ ArcGIS (ต้องตั้งค่าการเชื่อมต่อก่อน)
+.\Start-PMCheck.ps1 -Only AGS,AGSSVC,AGSUSAGE   # เฉพาะ ArcGIS (ต้องตั้งค่าการเชื่อมต่อก่อน)
 .\Export-PMDocxReport.ps1 -DataPath <PM-Data.json>   # แปลงเป็น Word
 .\Build-PMSingle.ps1                       # สร้างไฟล์เดียวแจก
 ```
@@ -65,9 +65,10 @@
 
 | หัวข้อ | Endpoint | ได้อะไร | ความพร้อม |
 |---|---|---|---|
-| `AGSUSAGE` | `/usagereports/<ชื่อ>/data` | คำขอรวม 7 วัน, max response time, timed-out | **สำรวจไซต์จริงแล้ว ยืนยันว่าอ่านได้** ดูหัวข้อ *เรื่องจำนวนคำขอกับเวลาตอบสนอง* |
 | `AGSDATA` | `/data/validateAllDataItems` | validate การเชื่อมต่อฐานข้อมูลที่ register ไว้ | POST แต่ read-only ใช้ credential ที่ register ไว้แล้ว ไม่ต้องเก็บรหัส Oracle เพิ่ม |
 | `AGSLOG` | `/logs/query` | นับ SEVERE/WARNING ย้อน 7 วัน | ระวังเวลารัน ไซต์ใหญ่ log เยอะมาก (pageSize สูงสุด 10,000) |
+
+`AGSUSAGE` เขียนเสร็จแล้ววันนี้ (23 ก.ค.) ดูหัวข้อใหม่ด้านล่าง *`Checks\A2-ArcGISUsage.ps1`*
 
 **ข้อบังคับของ `AGSUSAGE`** — อ่านได้เฉพาะรายงานที่ **มีอยู่แล้ว** บนไซต์
 **ห้ามสร้างรายงานใหม่เด็ดขาด** เพราะเป็นการเขียน = แตกสัญญา "อ่านอย่างเดียว" ของทั้งโปรเจกต์
@@ -493,6 +494,40 @@ Timed-out requests for the last 7 days  -> RequestsTimedOut    0
 ถ้าจะทำหัวข้อ `AGSUSAGE` ต่อ ต้องออกแบบให้ **อ่านเฉพาะรายงานที่มีอยู่ ไม่สร้างใหม่เด็ดขาด**
 และถ้าไซต์ไหนไม่เคยเปิด Manager จะไม่มีรายงานเลย ต้องลดระดับลงอย่างสุภาพ ไม่ใช่ error
 
+### `AGSUSAGE` — รายงานการใช้งาน (23 ก.ค. 2569) — เขียนแล้ว **ยังไม่ยืนยันกับไซต์จริง**
+
+เพิ่ม `Checks\A2-ArcGISUsage.ps1` ตามที่ออกแบบไว้ข้างบน: `GET /admin/usagereports` เพื่อดูว่ามี
+รายงานไหม ถ้าไม่มีลดเป็น `INFO` แล้ว `GET /admin/usagereports/<ชื่อ>/data` อ่านรายงานแรกที่เจอ
+รวม `RequestCount` (ผลรวม), หา `RequestMaxResponseTime` (ค่าสูงสุด — จับคำว่า "Max" ในชื่อ metric
+เพื่อสลับจากการรวมเป็นการหาค่าสูงสุด), และ `RequestsTimedOut` (ผลรวม) ตัดสิน `WARN`/`CRIT` จาก
+`Thresholds.AGSUsageTimedOutRequests` (`Warn: 1`) เพิ่มคีย์ `i18n.json` ชุด `agsusage.*` และเพิ่ม
+`"AGSUSAGE"` ลง `Checks.Disabled` เป็นค่าเริ่มต้น (แบบเดียวกับ `AGS`/`AGSSVC` ตอนเริ่มพัฒนา)
+
+**ข้อจำกัดสำคัญที่ต้องรู้ก่อนใช้จริง** — ต่างจาก `AGS`/`AGSSVC` ที่ schema ทุกจุดผ่านการสำรวจกับไซต์
+จริงมาก่อนเขียนโค้ด (ตามกฎที่เขียนไว้ท้ายไฟล์นี้) **`AGSUSAGE` เขียนจาก schema ที่จำมาจากเอกสาร
+Esri เท่านั้น ยังไม่เคยเห็น JSON response จริงของ `/usagereports/<ชื่อ>/data`** ตัวเลขสามค่าที่ยืนยัน
+แล้วในรอบก่อน (คำขอ 112,811 ครั้ง / เวลาตอบสนองสูงสุด 561.1 / หมดเวลา 0 ครั้ง) พิสูจน์แค่ว่า
+**endpoint นี้เข้าถึงได้และตอบกลับมาจริง** ไม่ได้พิสูจน์ว่าโครงสร้างที่โค้ดคาดไว้ถูกต้อง — โดยเฉพาะ
+ชื่อ property ที่มีขีดกลาง (`report.metadata.metrics`, `report.'report-data'`, `report.'time-slices'`)
+ซึ่งเป็นจุดที่สคริปต์ต้องเข้าถึงด้วย quoted member access ไม่ใช่ dot notation ธรรมดา
+
+ทดสอบด้วย mock ที่เขียนโครงสร้างตามที่โค้ดคาดไว้เองแล้วครบ 6 สถานการณ์ (ปกติ, มีคำขอหมดเวลา,
+ไม่มีรายงานเลย, query ข้อมูลรายงานพัง, มีรายงานแต่ไม่มีค่าที่อ่านได้ยัง, รหัสผ่านผิด) ทุกสถานการณ์
+ได้ผลตามที่ออกแบบและไม่มีเคสไหนทำให้ทั้ง run พัง — **แต่บทเรียนของ `AGS`/`AGSSVC` สองรอบก่อนคือ
+mock ที่เดา schema เองแบบนี้พิสูจน์ได้แค่ว่าโค้ดทำงานตามที่ตั้งใจ ไม่ได้พิสูจน์ว่าตรงกับของจริง**
+mock อยู่ที่ `scratchpad\mock-arcgis-usage.ps1` (ไม่ได้อยู่ใน repo เหมือนตัวเดิม)
+
+**ต้องทำก่อนเปิดเป็นค่าเริ่มต้นหรือเชื่อตัวเลขที่ออก**
+
+```powershell
+.\Start-PMCheck.ps1 -Only AGSUSAGE
+```
+
+แล้วเปิด `PM-Data.json` ดูที่ `Raw.Metrics` ของการ์ด `AGSUSAGE` เทียบกับตัวเลขที่เห็นในหน้าสถิติของ
+ArcGIS Server Manager เอง (Manager -> Server -> Statistics) ว่าตรงกัน ถ้าไม่ตรง ปัญหาจะอยู่ที่การ
+จับคู่ `metadata.metrics[i]` กับ `report-data[i]` แบบ positional ซึ่งเป็นจุดเดียวในโค้ดที่เดาไว้
+โดยไม่มีอะไรยืนยัน (ดูคอมเมนต์ในไฟล์เช็คเอง)
+
 ### สิ่งที่ยืนยันแล้วกับไซต์จริง
 
 - **HTTPS + TLS 1.2** ผ่าน Web Adaptor (`https://<host>/arcgis`) — `Initialize-PMArcGISTransport` ทำงานจริง
@@ -507,6 +542,8 @@ Timed-out requests for the last 7 days  -> RequestsTimedOut    0
 - **Portal-tier authentication** — ไซต์ที่ทดสอบใช้บัญชีของ ArcGIS Server เอง ถ้าไซต์ผูกกับ
   Portal for ArcGIS `generateToken` ของ Server อาจใช้ไม่ได้ ต้องขอ token จาก Portal แทน
 - **ไซต์ที่มีมากกว่า 2 เครื่อง** — ตอนนี้เรียก status ทีละเครื่อง (1 + N ครั้ง) ไซต์ใหญ่ควรวัดเวลาก่อน
+- **โครงสร้าง JSON ของ `/usagereports/<ชื่อ>/data`** — ดูหัวข้อ `AGSUSAGE` ด้านบน เขียนจาก schema
+  ที่จำมา ยังไม่เคยเห็น response จริง เป็นรายการที่สำคัญที่สุดที่ต้องยืนยันก่อนใช้งานจริง
 
 ---
 

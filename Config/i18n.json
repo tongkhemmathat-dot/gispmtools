@@ -310,5 +310,19 @@
   "agssvc.finding.folderError": { "th": "อ่านรายการบริการในโฟลเดอร์ \"{0}\" ไม่ได้ ({1}) ผลสรุปจึงอาจไม่ครบทุกบริการ", "en": "Could not read the services in folder \"{0}\" ({1}), so the totals may be incomplete." },
   "agssvc.note.limited":   { "th": "แสดง {0} รายการจากทั้งหมด {1} รายการ (รายการที่ต้องดำเนินการ และรายการที่มีคำขอสูงสุด) ข้อมูลครบทุกบริการอยู่ใน PM-Data.json", "en": "Showing {0} of {1} services (those needing attention, plus the busiest). Every service is in PM-Data.json." },
   "ags.finding.machineStopped": { "th": "เครื่อง \"{0}\" ในไซต์ ArcGIS Server ไม่ได้ทำงานอยู่ บริการแผนที่ที่อาศัยเครื่องนี้จะให้บริการไม่ได้หรือรับภาระงานได้น้อยลง ควรตรวจสอบสถานะเครื่องและบริการ ArcGIS Server บนเครื่องนั้น", "en": "Machine \"{0}\" in the ArcGIS Server site is not running. Services relying on it will be unavailable or have reduced capacity. Check the machine and the ArcGIS Server service on it." },
-  "ags.finding.noMachineAccess": { "th": "เชื่อมต่อไซต์ได้ แต่อ่านรายการเครื่องในไซต์ไม่ได้ ({0}) หากใช้บัญชีที่จำกัดสิทธิ์ ควรตรวจสอบว่าบัญชีมีสิทธิ์อ่านข้อมูลระบบเพียงพอ", "en": "Signed in successfully but could not list the site machines ({0}). If a restricted account is used, confirm it has enough privilege to read system resources." }
+  "ags.finding.noMachineAccess": { "th": "เชื่อมต่อไซต์ได้ แต่อ่านรายการเครื่องในไซต์ไม่ได้ ({0}) หากใช้บัญชีที่จำกัดสิทธิ์ ควรตรวจสอบว่าบัญชีมีสิทธิ์อ่านข้อมูลระบบเพียงพอ", "en": "Signed in successfully but could not list the site machines ({0}). If a restricted account is used, confirm it has enough privilege to read system resources." },
+
+  "agsusage.title":            { "th": "รายงานการใช้งาน ArcGIS Server", "en": "ArcGIS Server Usage Report" },
+  "agsusage.summary.ok":       { "th": "อ่านรายงาน \"{0}\" ได้ปกติ ไม่มีคำขอที่หมดเวลา", "en": "Read report \"{0}\" successfully. No requests timed out." },
+  "agsusage.summary.issue":    { "th": "รายงาน \"{0}\" พบคำขอที่หมดเวลา {1} รายการ", "en": "Report \"{0}\" shows {1} request(s) that timed out." },
+  "agsusage.summary.none":     { "th": "ไซต์นี้ยังไม่มีรายงานการใช้งาน", "en": "This site has no usage report yet." },
+  "agsusage.summary.error":    { "th": "พบรายงาน \"{0}\" แต่อ่านข้อมูลไม่ได้", "en": "Found report \"{0}\" but could not read its data." },
+  "agsusage.item.report":      { "th": "ชื่อรายงานที่อ่าน", "en": "Report Read" },
+  "agsusage.item.period":      { "th": "ช่วงเวลาที่ครอบคลุม", "en": "Period Covered" },
+  "agsusage.item.totalRequests": { "th": "จำนวนคำขอสะสม", "en": "Total Requests" },
+  "agsusage.item.maxResponseMs": { "th": "เวลาตอบสนองสูงสุด (มิลลิวินาที)", "en": "Max Response Time (ms)" },
+  "agsusage.item.timedOut":    { "th": "คำขอที่หมดเวลา", "en": "Timed-Out Requests" },
+  "agsusage.finding.timedOut": { "th": "รายงาน \"{1}\" พบคำขอที่หมดเวลา {0} รายการในช่วงที่รายงานครอบคลุม ผู้ใช้งานบางส่วนอาจได้รับผลลัพธ์ล่าช้าหรือไม่ได้รับเลย ควรตรวจสอบภาระงานของบริการที่เกี่ยวข้องและบันทึกเหตุการณ์ของ ArcGIS Server", "en": "Report \"{1}\" shows {0} request(s) that timed out during its covered period. Some users may have received a delayed or no response. Check the load on the relevant services and the ArcGIS Server logs." },
+  "agsusage.finding.dataError": { "th": "อ่านข้อมูลรายงาน \"{0}\" ไม่ได้ ({1}) จึงยังสรุปภาระงานไม่ได้ ไม่ได้แปลว่าไซต์มีปัญหา", "en": "Could not read the data of report \"{0}\" ({1}), so usage cannot be summarised. This does not by itself mean the site has a problem." },
+  "agsusage.finding.noMetrics": { "th": "รายงาน \"{0}\" มีอยู่แต่ไม่มีตัวชี้วัดที่อ่านค่าได้ อาจยังไม่มีข้อมูลสะสมในช่วงเวลาที่รายงานครอบคลุม", "en": "Report \"{0}\" exists but carries no readable metric values, possibly because no data has accumulated yet in its covered period." }
 }

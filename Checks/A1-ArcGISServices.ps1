@@ -6,11 +6,13 @@
 #
 # Read-only: /services and /services/<folder>/report are both plain GETs.
 #
-# Deliberately NOT using usage reports for the request numbers. Querying one
-# needs /usagereports/<name>/data, which only works if a report already
-# exists on the site, and creating one is a write. The per-service
+# Deliberately NOT using usage reports for the request numbers here. A usage
+# report only works if one already exists on the site (creating one is a
+# write) and reports its numbers per report, not per service - see
+# A2-ArcGISUsage.ps1 (AGSUSAGE) for that data instead. The per-service
 # "transactions" and "totalBusyTime" counters below come back from the plain
-# services report instead, and answer the same operational question.
+# services report, need no report to exist, and answer the same operational
+# question at service granularity.
 
 function Invoke-PMCheckArcGISServices {
 
