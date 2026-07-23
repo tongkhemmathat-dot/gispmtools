@@ -73,7 +73,7 @@ Write-Host ''
 Write-Host 'PMtools - building the single-file distributable' -ForegroundColor Cyan
 Write-Host ''
 
-$version = '1.7.2'
+$version = '1.7.3'
 try {
     $settings = Get-Content -LiteralPath (Join-Path $PMRoot 'Config\settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($settings.Report.ToolVersion) { $version = [string]$settings.Report.ToolVersion }
