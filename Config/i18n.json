@@ -325,5 +325,18 @@
   "agsusage.finding.timedOut": { "th": "รายงาน \"{1}\" พบคำขอที่หมดเวลา {0} รายการในช่วงที่รายงานครอบคลุม ผู้ใช้งานบางส่วนอาจได้รับผลลัพธ์ล่าช้าหรือไม่ได้รับเลย ควรตรวจสอบภาระงานของบริการที่เกี่ยวข้องและบันทึกเหตุการณ์ของ ArcGIS Server", "en": "Report \"{1}\" shows {0} request(s) that timed out during its covered period. Some users may have received a delayed or no response. Check the load on the relevant services and the ArcGIS Server logs." },
   "agsusage.finding.dataError": { "th": "อ่านข้อมูลรายงาน \"{0}\" ไม่ได้ ({1}) จึงยังสรุปภาระงานไม่ได้ ไม่ได้แปลว่าไซต์มีปัญหา", "en": "Could not read the data of report \"{0}\" ({1}), so usage cannot be summarised. This does not by itself mean the site has a problem." },
   "agsusage.finding.noMetrics": { "th": "รายงาน \"{0}\" มีอยู่แต่ไม่มีตัวชี้วัดที่อ่านค่าได้ อาจยังไม่มีข้อมูลสะสมในช่วงเวลาที่รายงานครอบคลุม", "en": "Report \"{0}\" exists but carries no readable metric values, possibly because no data has accumulated yet in its covered period." },
-  "agsusage.note.partial":      { "th": "อ่านรายงานต่อไปนี้ไม่ได้: {0} ตัวเลขที่แสดงจึงมาจากรายงานที่อ่านได้เท่านั้น อาจไม่ครบทุกตัวชี้วัด", "en": "Could not read the following report(s): {0}. The figures shown come only from the reports that could be read and may not cover every metric." }
+  "agsusage.note.partial":      { "th": "อ่านรายงานต่อไปนี้ไม่ได้: {0} ตัวเลขที่แสดงจึงมาจากรายงานที่อ่านได้เท่านั้น อาจไม่ครบทุกตัวชี้วัด", "en": "Could not read the following report(s): {0}. The figures shown come only from the reports that could be read and may not cover every metric." },
+
+  "agsdata.title":           { "th": "การเชื่อมต่อฐานข้อมูลของ ArcGIS Server", "en": "ArcGIS Server Data Store Connections" },
+  "agsdata.summary.ok":      { "th": "ตรวจการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้ {0} รายการ เชื่อมต่อได้ปกติทุกรายการ", "en": "{0} registered data connection(s) assessed. All connect successfully." },
+  "agsdata.summary.issue":   { "th": "ตรวจการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้ {0} รายการ เชื่อมต่อไม่ได้ {1} รายการ", "en": "{0} registered data connection(s) assessed. {1} could not connect." },
+  "agsdata.summary.none":    { "th": "ไซต์นี้ไม่มีการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้", "en": "This site has no registered data store connections." },
+  "agsdata.summary.listError": { "th": "อ่านรายการการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้ไม่ได้", "en": "Could not read the list of registered data store connections." },
+  "agsdata.col.path":        { "th": "รายการ", "en": "Item" },
+  "agsdata.col.type":        { "th": "ประเภท", "en": "Type" },
+  "agsdata.col.status":      { "th": "สถานะ", "en": "Status" },
+  "agsdata.state.ok":        { "th": "เชื่อมต่อได้ปกติ", "en": "Connected" },
+  "agsdata.state.failed":    { "th": "เชื่อมต่อไม่ได้", "en": "Failed to connect" },
+  "agsdata.finding.failed":  { "th": "เชื่อมต่อ \"{0}\" ไม่ได้ ({1}) บริการแผนที่ที่ใช้แหล่งข้อมูลนี้อาจใช้งานไม่ได้หรือแสดงข้อมูลไม่ครบ ควรตรวจสอบว่าฐานข้อมูลปลายทางยังทำงานอยู่ เครือข่ายเชื่อมต่อถึง และบัญชีที่ลงทะเบียนไว้ยังใช้งานได้ (เช่น รหัสผ่านไม่หมดอายุ)", "en": "Could not connect to \"{0}\" ({1}). Map services relying on this data source may fail or serve incomplete data. Check that the target database is up, reachable over the network, and that the registered account is still valid (e.g. its password has not expired)." },
+  "agsdata.finding.listError": { "th": "อ่านรายการการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้ไม่ได้ ({0}) จึงยังตรวจไม่ได้ว่าฐานข้อมูลใดเชื่อมต่อได้บ้าง", "en": "Could not read the list of registered data store connections ({0}), so which databases can connect is undetermined." }
 }

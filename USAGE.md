@@ -110,14 +110,15 @@
 
 ## ตรวจ ArcGIS Server
 
-หัวข้อ `AGS`, `AGSSVC` และ `AGSUSAGE` ปิดไว้เป็นค่าเริ่มต้นและต้อง**ตั้งค่าการเชื่อมต่อก่อน**
+หัวข้อ `AGS`, `AGSSVC`, `AGSUSAGE` และ `AGSDATA` ปิดไว้เป็นค่าเริ่มต้นและต้อง**ตั้งค่าการเชื่อมต่อก่อน**
 ผ่านเมนูหลัก -> `ArcGIS Server connection...` (ดูขั้นตอนเต็มใน [Manual.html](Manual.html) หรือ
 [CHECKS.md](CHECKS.md#arcgis-server))
 
 ```powershell
-.\Start-PMCheck.ps1 -Group ArcGIS                # ครบทั้งสามหัวข้อ ArcGIS ในคำสั่งเดียว
+.\Start-PMCheck.ps1 -Group ArcGIS                # ครบทั้งสี่หัวข้อ ArcGIS ในคำสั่งเดียว
 .\Start-PMCheck.ps1 -Group Server                # ทุกหัวข้อยกเว้น ArcGIS
 .\Start-PMCheck.ps1 -Only AGS                     # เฉพาะสถานะไซต์และเครื่อง
+.\Start-PMCheck.ps1 -Only AGSDATA                 # เฉพาะการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้
 ```
 
 **`-Group` แยก Server กับ ArcGIS ออกจากกันเด็ดขาด** เพราะเครื่องแม่ข่ายทั่วไปกับไซต์ ArcGIS Server

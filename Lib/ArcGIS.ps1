@@ -8,12 +8,18 @@
 #
 #  READ-ONLY, deliberately. Only two verbs are used against the site:
 #    - GET  for everything that reads state.
-#    - POST for generateToken and validateAllDataItems ONLY. Both are
-#      POST because the Admin API requires it (a token must travel in the
-#      request body, never a query string), NOT because they change
-#      anything: generateToken issues a short-lived token, and
-#      validateAllDataItems only tests that registered connections still
-#      answer. Neither writes to the site.
+#    - POST for generateToken, data/findItems and data/validateDataItem
+#      ONLY. All three are POST because the Admin API requires it for
+#      these operations (a token, or a JSON item description, must travel
+#      in the request body), NOT because they change anything:
+#      generateToken issues a short-lived token, data/findItems only lists
+#      what is already registered, and data/validateDataItem only retests
+#      a connection the site already has stored credentials for, using
+#      those credentials - see Checks\A3-ArcGISData.ps1 (AGSDATA) for how
+#      it is used and, just as important, what it is careful never to
+#      keep: findItems returns each item's connection string, encrypted
+#      password included, and AGSDATA never lets that leave memory.
+#      Nothing here writes to the site.
 #
 #  What is deliberately NOT implemented: creating a usage report. Reading
 #  one that already exists (Checks\A2-ArcGISUsage.ps1, AGSUSAGE) is a plain
