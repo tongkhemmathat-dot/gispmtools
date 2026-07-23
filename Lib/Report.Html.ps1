@@ -372,9 +372,11 @@ function New-PMChartHtml {
     # that literal set only ever made sense for a 0-100 percent scale. For
     # YMin=0/YMax=100 (every chart before this one) this reproduces the exact
     # same five values, so existing charts render identically.
+    # Rounded to whole numbers - a decimal on an axis label (e.g. "7375.8")
+    # reads as false precision the underlying data does not actually have.
     [void]$sb.Append('<g class="grid">')
     $ticks = @()
-    for ($i = 0; $i -le 4; $i++) { $ticks += [math]::Round($yMin + ($range * $i / 4), 1) }
+    for ($i = 0; $i -le 4; $i++) { $ticks += [math]::Round($yMin + ($range * $i / 4), 0) }
     foreach ($t in $ticks) {
         $y = [math]::Round(($mT + (1 - (($t - $yMin) / $range)) * $plotH), 1)
         [void]$sb.Append('<line x1="' + $mL + '" y1="' + $y + '" x2="' + $plotR + '" y2="' + $y + '"/>')
