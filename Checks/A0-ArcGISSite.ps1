@@ -15,6 +15,10 @@
 # license detail this check does not use. localDiskUsage came back an
 # empty array on the real site - its populated shape is unverified, so it
 # is deliberately left unread rather than guessed at.
+#
+# Hardware detail renders as three sub-rows (OS, CPU, RAM) directly under
+# each machine's status row, rather than one joined string, so each fact
+# stays independently readable.
 
 function Invoke-PMCheckArcGISSite {
 
@@ -127,14 +131,20 @@ function Invoke-PMCheckArcGISSite {
 
             $word = Get-PMWord -Key $valueKey
 
-            # Hardware detail is a proper-noun/technical fact (OS name, CPU
-            # model, memory in GB) rather than something to translate, so the
-            # same text is appended to both the Thai and English cell - same
-            # precedent as raw service Type strings elsewhere in the A*-ArcGIS
-            # checks.
-            $valueTh = $word.Th
-            $valueEn = $word.En
-            $hwRaw   = $null
+            $rows += @{
+                Item       = $name
+                ItemEn     = ''
+                Value      = $word.Th
+                ValueEn    = $word.En
+                _RowStatus = $rowStatus
+            }
+
+            # Hardware detail is broken into its own OS/CPU/RAM sub-rows right
+            # under the machine's status row, rather than one long joined
+            # string, so it stays readable at a glance. These rows carry no
+            # _RowStatus (no badge) - they are supplementary detail, same
+            # reasoning as the plain fact rows (URL/user/version) above.
+            $hwRaw = $null
             if ($hwByMachine.ContainsKey($name)) {
                 $hw = $hwByMachine[$name].hardware
                 if ($hw) {
@@ -148,19 +158,19 @@ function Invoke-PMCheckArcGISSite {
                     if ($hw.systemMemoryMB)          { $totalGB = [math]::Round(([double]$hw.systemMemoryMB) / 1024, 1) }
                     if ($hw.systemMemoryAvailableMB) { $freeGB  = [math]::Round(([double]$hw.systemMemoryAvailableMB) / 1024, 1) }
 
-                    $hwText = ('{0} | {1} ({2} cores) | RAM {3} GB ({4} GB free)' -f $os, $cpuModel, $cores, $totalGB, $freeGB)
-                    $valueTh = "$valueTh - $hwText"
-                    $valueEn = "$valueEn - $hwText"
-                    $hwRaw   = [pscustomobject]@{ Os = $os; Cpu = $cpuModel; LogicalProcessors = $cores; MemoryTotalGB = $totalGB; MemoryFreeGB = $freeGB }
-                }
-            }
+                    $cpuText = ('{0} ({1} cores)' -f $cpuModel, $cores)
+                    $ramText = ('{0} GB ({1} GB free)' -f $totalGB, $freeGB)
 
-            $rows += @{
-                Item       = $name
-                ItemEn     = ''
-                Value      = $valueTh
-                ValueEn    = $valueEn
-                _RowStatus = $rowStatus
+                    $osLabel  = Get-PMWord -Key 'ags.item.machineOs'
+                    $cpuLabel = Get-PMWord -Key 'ags.item.machineCpu'
+                    $ramLabel = Get-PMWord -Key 'ags.item.machineRam'
+
+                    $rows += @{ Item = "$name - $($osLabel.Th)";  ItemEn = "$name - $($osLabel.En)";  Value = $os;      ValueEn = $os;      _RowStatus = '' }
+                    $rows += @{ Item = "$name - $($cpuLabel.Th)"; ItemEn = "$name - $($cpuLabel.En)"; Value = $cpuText; ValueEn = $cpuText; _RowStatus = '' }
+                    $rows += @{ Item = "$name - $($ramLabel.Th)"; ItemEn = "$name - $($ramLabel.En)"; Value = $ramText; ValueEn = $ramText; _RowStatus = '' }
+
+                    $hwRaw = [pscustomobject]@{ Os = $os; Cpu = $cpuModel; LogicalProcessors = $cores; MemoryTotalGB = $totalGB; MemoryFreeGB = $freeGB }
+                }
             }
 
             $raw += [pscustomobject]@{

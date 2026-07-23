@@ -41,7 +41,7 @@ Initialize-PMCore -ConfigDir $ConfigDir
 $defaultMinutes = [int](Get-PMSetting -Path 'Monitor.DefaultMinutes'  -Default 30)
 $interval       = [int](Get-PMSetting -Path 'Monitor.IntervalSeconds' -Default 10)
 $maxAgeHours    = [double](Get-PMSetting -Path 'Monitor.MaxDataAgeHours' -Default 24)
-$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.0')
+$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.1')
 
 function Write-PMRule { Write-Host ('=' * 62) -ForegroundColor DarkGray }
 
