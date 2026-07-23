@@ -338,5 +338,22 @@
   "agsdata.state.ok":        { "th": "เชื่อมต่อได้ปกติ", "en": "Connected" },
   "agsdata.state.failed":    { "th": "เชื่อมต่อไม่ได้", "en": "Failed to connect" },
   "agsdata.finding.failed":  { "th": "เชื่อมต่อ \"{0}\" ไม่ได้ ({1}) บริการแผนที่ที่ใช้แหล่งข้อมูลนี้อาจใช้งานไม่ได้หรือแสดงข้อมูลไม่ครบ ควรตรวจสอบว่าฐานข้อมูลปลายทางยังทำงานอยู่ เครือข่ายเชื่อมต่อถึง และบัญชีที่ลงทะเบียนไว้ยังใช้งานได้ (เช่น รหัสผ่านไม่หมดอายุ)", "en": "Could not connect to \"{0}\" ({1}). Map services relying on this data source may fail or serve incomplete data. Check that the target database is up, reachable over the network, and that the registered account is still valid (e.g. its password has not expired)." },
-  "agsdata.finding.listError": { "th": "อ่านรายการการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้ไม่ได้ ({0}) จึงยังตรวจไม่ได้ว่าฐานข้อมูลใดเชื่อมต่อได้บ้าง", "en": "Could not read the list of registered data store connections ({0}), so which databases can connect is undetermined." }
+  "agsdata.finding.listError": { "th": "อ่านรายการการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้ไม่ได้ ({0}) จึงยังตรวจไม่ได้ว่าฐานข้อมูลใดเชื่อมต่อได้บ้าง", "en": "Could not read the list of registered data store connections ({0}), so which databases can connect is undetermined." },
+
+  "agslog.title":           { "th": "บันทึกเหตุการณ์ของ ArcGIS Server", "en": "ArcGIS Server Logs" },
+  "agslog.summary.ok":      { "th": "ไม่พบบันทึกระดับ SEVERE หรือ WARNING ในช่วง {0} วันที่ผ่านมา", "en": "No SEVERE or WARNING log entries in the last {0} day(s)." },
+  "agslog.summary.issue":   { "th": "พบบันทึกระดับ SEVERE {0} รายการ และ WARNING {1} รายการ ในช่วง {2} วันที่ผ่านมา", "en": "{0} SEVERE and {1} WARNING log entrie(s) in the last {2} day(s)." },
+  "agslog.col.level":       { "th": "ระดับ", "en": "Level" },
+  "agslog.col.machine":     { "th": "เครื่อง", "en": "Machine" },
+  "agslog.col.code":        { "th": "รหัส", "en": "Code" },
+  "agslog.col.count":       { "th": "จำนวน", "en": "Count" },
+  "agslog.col.last":        { "th": "ล่าสุด", "en": "Last" },
+  "agslog.col.sample":      { "th": "ตัวอย่างข้อความ", "en": "Sample Message" },
+  "agslog.level.severe":    { "th": "ร้ายแรง", "en": "Severe" },
+  "agslog.level.warning":   { "th": "ควรเฝ้าระวัง", "en": "Warning" },
+  "agslog.finding.severe":  { "th": "เครื่อง \"{0}\" มีบันทึกระดับร้ายแรงรหัส {1} จำนวน {2} รายการ ล่าสุดเมื่อ {3} ควรตรวจสอบบันทึกฉบับเต็มบน ArcGIS Server Manager เพื่อหาสาเหตุ", "en": "Machine \"{0}\" logged {2} SEVERE entrie(s) with code {1}, most recently at {3}. Check the full log in ArcGIS Server Manager for the cause." },
+  "agslog.finding.warning": { "th": "เครื่อง \"{0}\" มีบันทึกระดับควรเฝ้าระวังรหัส {1} จำนวน {2} รายการ ล่าสุดเมื่อ {3}", "en": "Machine \"{0}\" logged {2} WARNING entrie(s) with code {1}, most recently at {3}." },
+  "agslog.finding.queryError": { "th": "อ่านบันทึกระดับ {0} ไม่ได้ ({1}) ผลสรุปจึงอาจไม่ครบ", "en": "Could not read {0}-level log entries ({1}), so the totals may be incomplete." },
+  "agslog.finding.capped":  { "th": "ดึงบันทึกมาสูงสุด {0} รายการต่อระดับความรุนแรงเพื่อความเร็ว อาจมีมากกว่านี้จริงในไซต์ ตัวเลขที่แสดงจึงเป็นค่าอย่างน้อยที่สุด ไม่ใช่จำนวนที่ครบทั้งหมด", "en": "Fetched up to {0} entrie(s) per severity level for speed. The site may hold more; the figures shown are a lower bound, not an exhaustive count." },
+  "agslog.summary.queryError": { "th": "อ่านบันทึกเหตุการณ์ของ ArcGIS Server ไม่ได้เลยในช่วง {0} วันที่ผ่านมา จึงยังสรุปไม่ได้ว่ามีปัญหาหรือไม่", "en": "Could not read ArcGIS Server logs at all for the last {0} day(s), so whether there is a problem is undetermined." }
 }

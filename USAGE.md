@@ -110,22 +110,23 @@
 
 ## ตรวจ ArcGIS Server
 
-หัวข้อ `AGS`, `AGSSVC`, `AGSUSAGE` และ `AGSDATA` ปิดไว้เป็นค่าเริ่มต้นและต้อง**ตั้งค่าการเชื่อมต่อก่อน**
+หัวข้อ `AGS`, `AGSSVC`, `AGSUSAGE`, `AGSDATA` และ `AGSLOG` ปิดไว้เป็นค่าเริ่มต้นและต้อง**ตั้งค่าการเชื่อมต่อก่อน**
 ผ่านเมนูหลัก -> `ArcGIS Server connection...` (ดูขั้นตอนเต็มใน [Manual.html](Manual.html) หรือ
 [CHECKS.md](CHECKS.md#arcgis-server))
 
 ```powershell
-.\Start-PMCheck.ps1 -Group ArcGIS                # ครบทั้งสี่หัวข้อ ArcGIS ในคำสั่งเดียว
+.\Start-PMCheck.ps1 -Group ArcGIS                # ครบทั้งห้าหัวข้อ ArcGIS ในคำสั่งเดียว
 .\Start-PMCheck.ps1 -Group Server                # ทุกหัวข้อยกเว้น ArcGIS
 .\Start-PMCheck.ps1 -Only AGS                     # เฉพาะสถานะไซต์และเครื่อง
 .\Start-PMCheck.ps1 -Only AGSDATA                 # เฉพาะการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้
+.\Start-PMCheck.ps1 -Only AGSLOG                  # เฉพาะบันทึกเหตุการณ์ระดับ SEVERE/WARNING
 ```
 
 **`-Group` แยก Server กับ ArcGIS ออกจากกันเด็ดขาด** เพราะเครื่องแม่ข่ายทั่วไปกับไซต์ ArcGIS Server
 ไม่มีเหตุผลต้องตรวจรวมกันในรอบเดียว — `-Only` ที่ผสมหัวข้อ Server กับ ArcGIS เข้าด้วยกัน
 (เช่น `-Only DISK,AGS`) จะถูกปฏิเสธด้วยข้อความชัดเจนแทนที่จะรันแบบผสม ให้สั่งแยกสองรอบแทน
 
-`-Group ArcGIS` รันครบทั้งสามหัวข้อ**โดยไม่ต้องแก้ `Checks.Disabled`** เพราะการระบุกลุ่มตรง ๆ
+`-Group ArcGIS` รันครบทั้งห้าหัวข้อ**โดยไม่ต้องแก้ `Checks.Disabled`** เพราะการระบุกลุ่มตรง ๆ
 ถือเป็นการขอเปิดใช้งานอยู่แล้ว — จะแก้ `Checks.Disabled` ให้ ArcGIS รันทุกครั้งพร้อมหัวข้ออื่น
 โดยไม่ต้องพิมพ์ `-Group` ก็ยังทำได้เหมือนเดิม
 

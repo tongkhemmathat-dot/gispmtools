@@ -196,7 +196,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <li><strong>ไม่รีสตาร์ทเครื่อง</strong> และไม่สั่งอะไรที่ทำให้บริการสะดุด</li>
 </ul>
 
-<h3>หกหัวข้อที่ปิดไว้เป็นค่าเริ่มต้น</h3>
+<h3>เจ็ดหัวข้อที่ปิดไว้เป็นค่าเริ่มต้น</h3>
 <p>เป็นหัวข้อที่ต้องติดต่อออกนอกเครื่อง จึงปิดไว้ก่อนเพื่อความปลอดภัย</p>
 
 <div class="tablewrap">
@@ -215,6 +215,8 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
         <td>เหตุผลเดียวกับ <span class="mono">AGS</span></td><td class="mono">-Only AGSUSAGE</td></tr>
     <tr><td class="mono">AGSDATA</td><td>ตรวจการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้กับ ArcGIS Server — ดู<a href="#s10">หัวข้อที่ 10</a></td>
         <td>เหตุผลเดียวกับ <span class="mono">AGS</span></td><td class="mono">-Only AGSDATA</td></tr>
+    <tr><td class="mono">AGSLOG</td><td>ตรวจบันทึกเหตุการณ์ระดับ SEVERE/WARNING ของ ArcGIS Server — ดู<a href="#s10">หัวข้อที่ 10</a></td>
+        <td>เหตุผลเดียวกับ <span class="mono">AGS</span></td><td class="mono">-Only AGSLOG</td></tr>
   </tbody>
 </table>
 </div>
@@ -646,6 +648,7 @@ PMtools-1.3.0.cmd -MonitorMinutes 30</code></pre>
     <tr><td class="mono">AGSSVC</td><td>บริการแผนที่: สถานะ อินสแตนซ์ จำนวนคำขอ</td><td>บริการที่ควรทำงานแต่หยุด — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
     <tr><td class="mono">AGSUSAGE</td><td>รายงานการใช้งาน: คำขอสะสม เวลาตอบสนอง คำขอหมดเวลา</td><td>คำขอหมดเวลา — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
     <tr><td class="mono">AGSDATA</td><td>การเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้กับไซต์</td><td>เชื่อมต่อไม่ได้แม้แต่รายการเดียว — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
+    <tr><td class="mono">AGSLOG</td><td>บันทึกเหตุการณ์ของ ArcGIS Server ระดับ SEVERE/WARNING ย้อน 7 วัน</td><td>พบบันทึกระดับ SEVERE แม้แต่รายการเดียว — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
   </tbody>
 </table>
 </div>
@@ -655,10 +658,11 @@ PMtools-1.3.0.cmd -MonitorMinutes 30</code></pre>
 <section id="s10">
 <h2><span class="n">10</span>ตรวจ ArcGIS Server</h2>
 
-<p>สี่หัวข้อ <span class="mono">AGS</span>, <span class="mono">AGSSVC</span>, <span class="mono">AGSUSAGE</span>
-และ <span class="mono">AGSDATA</span> ตรวจสถานะ <strong>ArcGIS Server</strong> ผ่าน Administrator API ของไซต์เอง
-เหมาะกับหน่วยงานที่มีเครื่องแม่ข่าย GIS แยกต่างหาก เป็นการ<strong>อ่านค่าอย่างเดียวเหมือนหัวข้ออื่นทุกประการ</strong>
-แต่ปิดไว้เป็นค่าเริ่มต้น เพราะต้องเชื่อมต่อออกนอกเครื่องไปยัง ArcGIS Server และต้อง<strong>ตั้งค่าการเชื่อมต่อก่อนใช้งานครั้งแรก</strong></p>
+<p>ห้าหัวข้อ <span class="mono">AGS</span>, <span class="mono">AGSSVC</span>, <span class="mono">AGSUSAGE</span>,
+<span class="mono">AGSDATA</span> และ <span class="mono">AGSLOG</span> ตรวจสถานะ <strong>ArcGIS Server</strong>
+ผ่าน Administrator API ของไซต์เอง เหมาะกับหน่วยงานที่มีเครื่องแม่ข่าย GIS แยกต่างหาก เป็นการ
+<strong>อ่านค่าอย่างเดียวเหมือนหัวข้ออื่นทุกประการ</strong> แต่ปิดไว้เป็นค่าเริ่มต้น เพราะต้องเชื่อมต่อออกนอกเครื่องไปยัง
+ArcGIS Server และต้อง<strong>ตั้งค่าการเชื่อมต่อก่อนใช้งานครั้งแรก</strong></p>
 
 <h3>ตั้งค่าการเชื่อมต่อ (ทำครั้งเดียว)</h3>
 <ol class="steps">
@@ -705,7 +709,7 @@ PMtools-1.3.0.cmd -MonitorMinutes 30</code></pre>
   <strong>ไม่ได้เก็บใน <span class="mono">Config\settings.json</span></strong> ที่ขึ้น git และแจกไปพร้อมไฟล์เดียว</p>
 </div>
 
-<h3>สี่หัวข้อตรวจอะไรบ้าง</h3>
+<h3>ห้าหัวข้อตรวจอะไรบ้าง</h3>
 <div class="tablewrap">
 <table>
   <thead><tr><th class="mono">รหัส</th><th>ตรวจอะไร</th><th>ขึ้นวิกฤตเมื่อไร</th></tr></thead>
@@ -718,6 +722,8 @@ PMtools-1.3.0.cmd -MonitorMinutes 30</code></pre>
         <td>มีคำขอที่หมดเวลาแม้แต่รายการเดียว</td></tr>
     <tr><td class="mono">AGSDATA</td><td>การเชื่อมต่อฐานข้อมูล/แหล่งข้อมูลที่ลงทะเบียนไว้กับไซต์ (enterprise geodatabase, file share ฯลฯ) ทดสอบทีละรายการ</td>
         <td>เชื่อมต่อไม่ได้แม้แต่รายการเดียว</td></tr>
+    <tr><td class="mono">AGSLOG</td><td>บันทึกเหตุการณ์ระดับ SEVERE/WARNING ย้อน 7 วัน (สูงสุด 100 รายการต่อระดับ)</td>
+        <td>พบบันทึกระดับ SEVERE แม้แต่รายการเดียว</td></tr>
   </tbody>
 </table>
 </div>
@@ -730,10 +736,17 @@ PMtools-1.3.0.cmd -MonitorMinutes 30</code></pre>
   ประเภท และผลว่าเชื่อมต่อได้หรือไม่ได้เท่านั้น</p>
 </div>
 
+<div class="callout c-info">
+  <div class="t">AGSLOG ดึงข้อมูลจำกัดจำนวนเพื่อความเร็ว ไม่ใช่ตัวเลขที่ครบทุกรายการเสมอไป</div>
+  <p>ไซต์ใหญ่มีบันทึกเหตุการณ์เป็นหมื่นรายการต่อ 7 วัน หัวข้อนี้จึงดึงมาสูงสุด 100 รายการต่อระดับ
+  ความรุนแรง (ปรับได้ที่ <span class="mono">ArcGIS.LogPageSize</span>) ถ้ามีมากกว่านั้นจะมีข้อความ
+  บอกไว้ในรายงานว่าตัวเลขที่แสดงเป็นค่าอย่างน้อยที่สุด ไม่ใช่จำนวนที่ครบทั้งหมด</p>
+</div>
+
 <h3>สั่งรัน</h3>
 <p>ทางที่ง่ายที่สุดคือใช้เมนู (<a href="#s6">หัวข้อที่ 6</a>) แล้วเลือก
 <span class="mono">[2] ArcGIS Server</span> ตั้งแต่หน้าแรก ส่วนสั่งตรงจาก PowerShell ทำได้ดังนี้</p>
-<pre><code>.\Start-PMCheck.ps1 -Group ArcGIS                 # ครบทั้งสี่หัวข้อ ArcGIS ในคำสั่งเดียว
+<pre><code>.\Start-PMCheck.ps1 -Group ArcGIS                 # ครบทั้งห้าหัวข้อ ArcGIS ในคำสั่งเดียว
 .\Start-PMCheck.ps1 -Group Server                 # ทุกหัวข้อยกเว้น ArcGIS
 .\Start-PMCheck.ps1                               # ปกติ - ยังไม่รวมหัวข้อ ArcGIS จนกว่าจะเปิดไว้</code></pre>
 
@@ -745,19 +758,20 @@ PMtools-1.3.0.cmd -MonitorMinutes 30</code></pre>
 </div>
 
 <p>ถ้าต้องการให้ ArcGIS รันรวมกับหัวข้ออื่นทุกครั้งโดยไม่ต้องพิมพ์ <span class="mono">-Group</span>
-ให้ลบ <span class="mono">"AGS"</span>, <span class="mono">"AGSSVC"</span>, <span class="mono">"AGSUSAGE"</span>
-และ <span class="mono">"AGSDATA"</span> ออกจาก <span class="mono">Checks.Disabled</span> ใน
-<span class="mono">Config\settings.json</span> ตาม<a href="#s11">หัวข้อที่ 11</a></p>
+ให้ลบ <span class="mono">"AGS"</span>, <span class="mono">"AGSSVC"</span>, <span class="mono">"AGSUSAGE"</span>,
+<span class="mono">"AGSDATA"</span> และ <span class="mono">"AGSLOG"</span> ออกจาก
+<span class="mono">Checks.Disabled</span> ใน <span class="mono">Config\settings.json</span> ตาม<a href="#s11">หัวข้อที่ 11</a></p>
 
 <div class="callout c-ok">
   <div class="t">ยังอ่านค่าอย่างเดียวเหมือนหัวข้ออื่นทุกประการ</div>
-  <p>ทุกหัวข้อใช้ <span class="mono">GET</span> เป็นหลัก ยกเว้นสามจุดที่ API บังคับให้เป็น
+  <p>ทุกหัวข้อใช้ <span class="mono">GET</span> เป็นหลัก ยกเว้นสี่จุดที่ API บังคับให้เป็น
   <span class="mono">POST</span> (ไม่ใช่เพราะเขียนอะไร): ขั้นตอนขอ token เพราะรหัสผ่านต้อง
-  เดินทางใน request body และสอง endpoint ของ <span class="mono">AGSDATA</span> เพราะต้องส่ง
-  JSON ยาวเกินจะใส่ใน query string หัวข้อ <span class="mono">AGSUSAGE</span> อ่านได้เฉพาะรายงานที่
-  <strong>มีอยู่แล้ว</strong>บนไซต์ จะไม่สั่งสร้างรายงานใหม่เด็ดขาด และหัวข้อ
+  เดินทางใน request body และ endpoint ของ <span class="mono">AGSDATA</span>/<span class="mono">AGSLOG</span>
+  เพราะต้องส่ง JSON ยาวเกินจะใส่ใน query string หัวข้อ <span class="mono">AGSUSAGE</span> อ่านได้เฉพาะรายงานที่
+  <strong>มีอยู่แล้ว</strong>บนไซต์ จะไม่สั่งสร้างรายงานใหม่เด็ดขาด หัวข้อ
   <span class="mono">AGSDATA</span> แค่ทดสอบการเชื่อมต่อด้วย credential ที่ลงทะเบียนไว้แล้ว
-  ไม่เคยส่งหรือรับรหัสผ่านฐานข้อมูลเอง</p>
+  ไม่เคยส่งหรือรับรหัสผ่านฐานข้อมูลเอง และหัวข้อ <span class="mono">AGSLOG</span> แค่อ่านบันทึกที่ไซต์
+  เก็บไว้แล้ว ไม่ได้สั่งให้บันทึกเพิ่มหรือลบบันทึกเก่าทิ้ง</p>
 </div>
 
 <p>รายละเอียดเชิงลึกกว่านี้ (schema ของ API, เกณฑ์ configured เทียบ realTime ฯลฯ) อยู่ใน

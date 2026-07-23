@@ -29,9 +29,9 @@
 ไม่ตั้งค่า ไม่แก้ registry ไม่เริ่ม/หยุดบริการ ไม่ติดตั้งอะไร และ**ไม่รีสตาร์ทเครื่อง**
 สิ่งเดียวที่เขียนลงดิสก์คือโฟลเดอร์รายงานใน `Output\`
 
-มีหกหัวข้อที่ติดต่อออกนอกเครื่อง (`WU` ถาม WSUS/Microsoft Update, `CONN` ส่ง ping,
-`AGS`/`AGSSVC`/`AGSUSAGE`/`AGSDATA` ตรวจ **ArcGIS Server** ผ่าน Administrator API แบบอ่านอย่างเดียว)
-ทั้งหก**ปิดไว้เป็นค่าเริ่มต้น** เปิดใช้เฉพาะครั้งได้ด้วย `-Only WU` หรือ `-Group ArcGIS`
+มีเจ็ดหัวข้อที่ติดต่อออกนอกเครื่อง (`WU` ถาม WSUS/Microsoft Update, `CONN` ส่ง ping,
+`AGS`/`AGSSVC`/`AGSUSAGE`/`AGSDATA`/`AGSLOG` ตรวจ **ArcGIS Server** ผ่าน Administrator API แบบอ่านอย่างเดียว)
+ทั้งเจ็ด**ปิดไว้เป็นค่าเริ่มต้น** เปิดใช้เฉพาะครั้งได้ด้วย `-Only WU` หรือ `-Group ArcGIS`
 เป็นต้น หัวข้อ ArcGIS ต้องตั้งค่าการเชื่อมต่อก่อนใช้งานครั้งแรกด้วย (เมนูหลัก ->
 `ArcGIS Server connection...`) และไม่รันรวมกับหัวข้อ Server ในรอบเดียวกัน
 รายละเอียดครบอยู่ใน [CHECKS.md](CHECKS.md#arcgis-server)
