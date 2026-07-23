@@ -368,8 +368,13 @@ function New-PMChartHtml {
     [void]$sb.Append('<svg viewBox="0 0 ' + $vbW + ' ' + $vbH + '" role="img" preserveAspectRatio="xMidYMid meet">')
 
     # ---- horizontal grid and y ticks (solid hairlines, never dashed) ----
+    # Five values evenly spaced across YMin..YMax, not a hardcoded 0/25/50/75/100 -
+    # that literal set only ever made sense for a 0-100 percent scale. For
+    # YMin=0/YMax=100 (every chart before this one) this reproduces the exact
+    # same five values, so existing charts render identically.
     [void]$sb.Append('<g class="grid">')
-    $ticks = @(0, 25, 50, 75, 100)
+    $ticks = @()
+    for ($i = 0; $i -le 4; $i++) { $ticks += [math]::Round($yMin + ($range * $i / 4), 1) }
     foreach ($t in $ticks) {
         $y = [math]::Round(($mT + (1 - (($t - $yMin) / $range)) * $plotH), 1)
         [void]$sb.Append('<line x1="' + $mL + '" y1="' + $y + '" x2="' + $plotR + '" y2="' + $y + '"/>')

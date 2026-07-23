@@ -40,6 +40,15 @@
 #    up positionally against metadata, which is fortunate, because the
 #    metadata field comes back as a JSON-encoded STRING inside the data
 #    response (unlike the list response, where it is a real object).
+#
+# 2026-07-23: also charts RequestCount across its own time-slices (the site's
+# permanent report is a rolling 7-day window in ~4-hour buckets) instead of
+# only the collapsed total - no extra API call, since the per-slice data was
+# already being fetched and thrown away. Deliberately site-wide only, matching
+# the rest of this check: a genuine per-map-service request trend would need
+# ArcGIS to keep history it does not keep anywhere (the only per-service
+# number, AGSSVC's "transactions", is a live cumulative counter with no
+# history behind it), so that was scoped out rather than half-built here.
 
 function Invoke-PMCheckArcGISUsage {
 
@@ -62,6 +71,15 @@ function Invoke-PMCheckArcGISUsage {
         $usedNames  = @()
         $failedNames = @()
         $allSlices  = @()
+
+        # Per-time-slice RequestCount, kept alongside (not instead of) the
+        # collapsed total in $values, so the request-volume-over-time chart
+        # below can be built from data this check already has to fetch
+        # anyway - no extra API call. Keyed by timestamp rather than a plain
+        # array so more than one contributing report/resourceURI at the same
+        # timestamp sums correctly, the same way the collapsed total does.
+        $requestSeriesByTime  = @{}
+        $requestReportNames   = @()
 
         foreach ($rep in $reports) {
             $reportName = [string]$rep.reportname
@@ -87,7 +105,8 @@ function Invoke-PMCheckArcGISUsage {
             }
 
             $usedNames += $reportName
-            foreach ($slice in @($report.'time-slices')) { if ($null -ne $slice) { $allSlices += [double]$slice } }
+            $sliceTimes = @(@($report.'time-slices') | ForEach-Object { [double]$_ })
+            foreach ($slice in $sliceTimes) { $allSlices += $slice }
 
             foreach ($group in @($report.'report-data')) {
                 foreach ($entry in @($group)) {
@@ -97,6 +116,18 @@ function Invoke-PMCheckArcGISUsage {
                     $nums = @()
                     foreach ($v in @($entry.data)) { if ($null -ne $v) { $nums += [double]$v } }
                     if ($nums.Count -eq 0) { continue }
+
+                    if ($metricName -eq 'RequestCount') {
+                        $requestReportNames += $reportName
+                        $dataArr = @($entry.data)
+                        for ($i = 0; $i -lt $dataArr.Count -and $i -lt $sliceTimes.Count; $i++) {
+                            $v = $dataArr[$i]
+                            if ($null -eq $v) { continue }
+                            $t = $sliceTimes[$i]
+                            if ($requestSeriesByTime.ContainsKey($t)) { $requestSeriesByTime[$t] += [double]$v }
+                            else                                      { $requestSeriesByTime[$t] = [double]$v }
+                        }
+                    }
 
                     # A metric named "...Max..." is a peak and must not be
                     # summed across time slices or across reports -
@@ -177,9 +208,35 @@ function Invoke-PMCheckArcGISUsage {
             $sumVal = @(($usedNames -join ', '))
         }
 
+        # Chart the request-count series only when there is something worth
+        # drawing a line through - the renderer itself refuses fewer than 2
+        # points, so building one below that is pointless work.
+        $chart = $null
+        if ($requestSeriesByTime.Count -ge 2) {
+            $sortedTimes = @($requestSeriesByTime.Keys | Sort-Object)
+            $epoch       = New-Object DateTime -ArgumentList 1970, 1, 1, 0, 0, 0, ([DateTimeKind]::Utc)
+            $xLabels     = @($sortedTimes | ForEach-Object { ($epoch.AddMilliseconds($_).ToLocalTime()).ToString('MM-dd HH:mm') })
+            $yValues     = @($sortedTimes | ForEach-Object { $requestSeriesByTime[$_] })
+
+            $yMax = ($yValues | Measure-Object -Maximum).Maximum
+            if ($yMax -le 0) { $yMax = 1 }
+            $yMax = [math]::Ceiling($yMax * 1.1)
+
+            $seriesName  = Get-PMText -Key 'agsusage.chart.series'
+            $startLabel  = $xLabels[0]
+            $endLabel    = $xLabels[$xLabels.Count - 1]
+            $reportsUsed = @($requestReportNames | Select-Object -Unique) -join ', '
+            $caption     = Get-PMText -Key 'agsusage.chart.caption' -Values @($reportsUsed, $xLabels.Count, $startLabel, $endLabel)
+
+            $chart = New-PMLineChart -XLabels $xLabels `
+                -Series @([pscustomobject]@{ TitleTh = $seriesName.Th; TitleEn = $seriesName.En; Values = $yValues }) `
+                -YMin 0 -YMax $yMax -YUnit '' `
+                -CaptionTh $caption.Th -CaptionEn $caption.En
+        }
+
         return New-PMResult -Id 'AGSUSAGE' -TitleKey 'agsusage.title' -Status $status `
             -SummaryKey $sumKey -SummaryValues $sumVal `
-            -Columns $columns -Rows $rows -Findings $findings `
+            -Columns $columns -Rows $rows -Findings $findings -Chart $chart `
             -Raw ([pscustomobject]@{ ReportsUsed = $usedNames; ReportsFailed = $failedNames; Metrics = $values })
     }
     finally {

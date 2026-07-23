@@ -326,6 +326,8 @@
   "agsusage.finding.dataError": { "th": "อ่านข้อมูลรายงาน \"{0}\" ไม่ได้ ({1}) จึงยังสรุปภาระงานไม่ได้ ไม่ได้แปลว่าไซต์มีปัญหา", "en": "Could not read the data of report \"{0}\" ({1}), so usage cannot be summarised. This does not by itself mean the site has a problem." },
   "agsusage.finding.noMetrics": { "th": "รายงาน \"{0}\" มีอยู่แต่ไม่มีตัวชี้วัดที่อ่านค่าได้ อาจยังไม่มีข้อมูลสะสมในช่วงเวลาที่รายงานครอบคลุม", "en": "Report \"{0}\" exists but carries no readable metric values, possibly because no data has accumulated yet in its covered period." },
   "agsusage.note.partial":      { "th": "อ่านรายงานต่อไปนี้ไม่ได้: {0} ตัวเลขที่แสดงจึงมาจากรายงานที่อ่านได้เท่านั้น อาจไม่ครบทุกตัวชี้วัด", "en": "Could not read the following report(s): {0}. The figures shown come only from the reports that could be read and may not cover every metric." },
+  "agsusage.chart.series":      { "th": "จำนวนคำขอ", "en": "Request Count" },
+  "agsusage.chart.caption":     { "th": "จำนวนคำขอต่อช่วงเวลา จากรายงาน \"{0}\" ({1} จุดข้อมูล ตั้งแต่ {2} ถึง {3}) รวมทั้งไซต์ ไม่แยกรายบริการ", "en": "Requests per time bucket, from report \"{0}\" ({1} data point(s), {2} to {3}). Site-wide total, not broken out by service." },
 
   "agsdata.title":           { "th": "การเชื่อมต่อฐานข้อมูลของ ArcGIS Server", "en": "ArcGIS Server Data Store Connections" },
   "agsdata.summary.ok":      { "th": "ตรวจการเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้ {0} รายการ เชื่อมต่อได้ปกติทุกรายการ", "en": "{0} registered data connection(s) assessed. All connect successfully." },
