@@ -10,7 +10,7 @@
     "SystemNameTh": "",
     "SystemNameEn": "",
     "PreparedBy": "",
-    "ToolVersion": "1.7.3",
+    "ToolVersion": "1.7.4",
 
     "_showRecommendations": "แสดงหัวข้อ 'ข้อเสนอแนะและสิ่งที่ควรดำเนินการ' ในรายงานหรือไม่ | ปิดไว้เพื่อให้รายงานกระชับ | ข้อเสนอแนะยังถูกคำนวณและเก็บไว้ใน PM-Data.json ครบเสมอ ไม่ว่าจะเปิดหรือปิด",
     "ShowRecommendations": false

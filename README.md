@@ -50,7 +50,7 @@
 หรือสั่งจาก command line รอบเดียวจบ ไม่ผ่านเมนู (เหมาะกับ Scheduled Task หรือรันจากระยะไกล):
 
 ```cmd
-PMtools-1.7.3.cmd -Only DISK,CERT -OpenReport
+PMtools-1.7.4.cmd -Only DISK,CERT -OpenReport
 ```
 
 ผลลัพธ์ (`<ชื่อเครื่อง>_<วันเวลา>\PM-Report.html`) จะออกมาข้างไฟล์ `.cmd` นั้นโดยตรง
