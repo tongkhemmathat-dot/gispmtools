@@ -25,21 +25,15 @@
 .\Build-PMSingle.ps1                       # สร้างไฟล์เดียวแจก
 ```
 
-### ⚠️ สามอย่างที่ต้องทำก่อน แล้วค่อยเขียนโค้ดใหม่
+### ⚠️ สองอย่างที่ยังค้างอยู่
 
-**1. ยังไม่ได้ออก release v1.2.0** — `ToolVersion` ใน `settings.json` ยังเป็น `1.1.0`
-แต่หลัง v1.1.0 มีของใหม่เข้ามาเยอะ (หัวข้อ ArcGIS สองตัว, เมนูเชื่อมต่อ, แก้บั๊กเมนู,
-แก้บั๊ก `-File` กับจุลภาค) **ควร bump เป็น 1.2.0 แล้วออก release พร้อม zip**
-ขั้นตอนเดิมอยู่ในหัวข้อ *แจกแบบไฟล์เดียว* ของ `DISTRIBUTION.md`
-
-> เวลา bump ต้องไล่แก้ทุกที่ที่ hardcode เลขไว้ ไม่ใช่แค่ `settings.json` — ยังมีใน
-> README, Manual.html, ไฟล์นี้เอง และ fallback default ในสามสคริปต์หลัก หาให้ครบด้วย
->
-> ```bash
-> grep -rn "1\.1\.0" --include="*.md" --include="*.html" --include="*.ps1" --include="*.json" .
-> ```
->
-> (ข้ามผลใน `Dist/` กับ `Output/` ได้ เพราะสร้างใหม่อยู่แล้ว)
+**~~1. ยังไม่ได้ออก release v1.2.0~~ ออกแล้ว (23 ก.ค. 2569)** — bump `ToolVersion` เป็น `1.2.0`
+ทั้งใน `settings.json`, `Build-PMSingle.ps1`, fallback default ใน `Show-PMMenu.ps1`/
+`Start-PMCheck.ps1`, และเลขที่ hardcode ไว้ใน `DISTRIBUTION.md`/`Manual.html`/`USAGE.md`/ไฟล์นี้
+(ไล่ด้วย `grep -rn "1\.1\.0" ...` ตามที่บันทึกไว้เดิม เจอครบทุกจุดที่คาดไว้) แล้ว build ทั้ง `.cmd`,
+`.ps1` และ `.zip` ด้วย `Build-PMSingle.ps1 -Format Both` ทดสอบตัวไฟล์เดียวแบบไม่ต้องเจอหน้าต่าง
+ขอสิทธิ์ (วิธีเดิมด้านล่างหัวข้อ `Build-PMSingle.ps1`) ผ่าน แล้ว tag `v1.2.0`, push, และสร้าง
+GitHub Release พร้อมแนบทั้งสองไฟล์
 
 **2. เอกสารฝั่งผู้ใช้ยังไม่พูดถึง ArcGIS เลย** — ตรวจแล้ว มีแต่ `CHECKS.md` ที่เขียนไว้
 
@@ -211,7 +205,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File 'D:\PMtools\Show-PMMenu.ps1'
 ซึ่งทำให้ทดสอบอัตโนมัติไม่ได้ ให้เรียกท่อน PowerShell ตรง ๆ แบบเดียวกับที่ label `:elevated` ทำ
 
 ```powershell
-$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.1.0.cmd'
+$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.2.0.cmd'
 $boot = '$t=[IO.File]::ReadAllText($env:PM_SELF); $m=''#PM''+''TOOLS_PAYLOAD#''; & ([scriptblock]::Create($t.Substring($t.IndexOf($m))))'
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$boot -Only DISK"
 ```

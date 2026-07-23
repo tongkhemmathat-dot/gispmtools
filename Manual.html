@@ -221,7 +221,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <li>
     <div class="h">คัดลอกโฟลเดอร์ไปวางบนเครื่องแม่ข่าย</div>
     <p>คัดลอกโฟลเดอร์ <code>PMtools</code> ทั้งโฟลเดอร์ ไม่ต้องแยกไฟล์ วางที่ไหนก็ได้ที่เขียนไฟล์ได้ เช่น <code>D:\PMtools</code></p>
-    <p>ถ้าได้มาเป็น<strong>ไฟล์เดียว</strong>ชื่อ <span class="mono">PMtools-1.1.0.cmd</span> ให้ข้ามไป<a href="#s4">หัวข้อที่ 4</a> แทน</p>
+    <p>ถ้าได้มาเป็น<strong>ไฟล์เดียว</strong>ชื่อ <span class="mono">PMtools-1.2.0.cmd</span> ให้ข้ามไป<a href="#s4">หัวข้อที่ 4</a> แทน</p>
   </li>
   <li>
     <div class="h">แก้ชื่อหน่วยงาน (ทำครั้งเดียว)</div>
@@ -273,7 +273,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <tbody>
     <tr><td>โฟลเดอร์ <span class="mono">PMtools</span> ที่มีไฟล์หลายสิบไฟล์</td>
         <td>ดับเบิลคลิก <span class="mono">Run-PM.cmd</span> ตาม<a href="#s3">หัวข้อที่ 3</a></td></tr>
-    <tr><td>ไฟล์เดียวชื่อ <span class="mono">PMtools-1.1.0.cmd</span></td>
+    <tr><td>ไฟล์เดียวชื่อ <span class="mono">PMtools-1.2.0.cmd</span></td>
         <td>ดับเบิลคลิกไฟล์นั้นได้เลย ไม่ต้องมีอะไรอยู่ข้าง ๆ</td></tr>
   </tbody>
 </table>
@@ -311,7 +311,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <p>โฟลเดอร์รายงานจะโผล่ <strong>ข้างตัวไฟล์โดยตรง</strong> วางไฟล์ไว้ที่ไหน รายงานก็อยู่ตรงนั้น</p>
 
 <pre><code>D:\ตรวจเครื่อง\
-    PMtools-1.1.0.cmd
+    PMtools-1.2.0.cmd
     SRV-APP01_20260722-1305\      &lt;- รอบนี้
         PM-Report.html
         PM-Data.json
@@ -332,7 +332,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <p>ค่าตั้งต้นทั้งหมดถูกฝังอยู่ในไฟล์ ถ้าต้องการแก้ ให้ดึงออกมาก่อนหนึ่งครั้ง
 โดยเปิด Command Prompt ที่โฟลเดอร์นั้นแล้วสั่ง</p>
 
-<pre><code>PMtools-1.1.0.cmd -ExtractConfig</code></pre>
+<pre><code>PMtools-1.2.0.cmd -ExtractConfig</code></pre>
 
 <p>จะได้โฟลเดอร์ <span class="mono">Config\</span> ออกมาวางข้างไฟล์ แก้ <span class="mono">settings.json</span>
 ด้วย Notepad ตาม<a href="#s10">หัวข้อที่ 10</a> ได้เลย รอบถัดไปเครื่องมือจะหยิบค่าที่แก้ไว้ไปใช้เอง
@@ -348,9 +348,9 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 
 <p>ใช้สวิตช์ชุดเดียวกับ<a href="#s11">หัวข้อที่ 11</a> ได้ทั้งหมด เพียงเรียกผ่านชื่อไฟล์นี้แทน</p>
 
-<pre><code>PMtools-1.1.0.cmd -Only DISK,CERT
-PMtools-1.1.0.cmd -Skip EVT
-PMtools-1.1.0.cmd -MonitorMinutes 30</code></pre>
+<pre><code>PMtools-1.2.0.cmd -Only DISK,CERT
+PMtools-1.2.0.cmd -Skip EVT
+PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
 
 <div class="callout c-ok">
   <div class="t">ยังอ่านค่าอย่างเดียวเหมือนเดิมทุกประการ</div>
@@ -434,7 +434,7 @@ PMtools-1.1.0.cmd -MonitorMinutes 30</code></pre>
 <p>เมื่อดับเบิลคลิก <code>Run-PM.cmd</code> จะเห็นหน้านี้ก่อน</p>
 
 <pre><code>==============================================================
-  PMtools 1.1.0 - Preventive Maintenance
+  PMtools 1.2.0 - Preventive Maintenance
   Server: SRV-APP01      2026-07-22 11:15
 ==============================================================
 
@@ -783,7 +783,7 @@ PMtools-1.1.0.cmd -MonitorMinutes 30</code></pre>
 </section>
 
 <footer>
-  คู่มือการใช้งาน PMtools เวอร์ชัน 1.1.0
+  คู่มือการใช้งาน PMtools เวอร์ชัน 1.2.0
 </footer>
 
 </div>
