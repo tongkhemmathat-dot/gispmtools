@@ -133,7 +133,7 @@ $checks = @(Get-PMRegisteredCheck)
 #
 # The single-file bootstrap in Build-PMSingle.ps1 already did this for its own
 # forwarded arguments - this is the same trap one layer down, and it is the
-# third time in this project that -File and & have differed. See HANDOVER.md.
+# third time in this project that -File and & have differed. See docs/HANDOVER.md.
 function Expand-PMIdList {
     param([string[]]$Values)
     if (-not $Values) { return @() }

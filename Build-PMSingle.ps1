@@ -42,7 +42,7 @@ if ([string]::IsNullOrWhiteSpace($OutDir)) { $OutDir = Join-Path $PMRoot 'Dist' 
 
 # ---------------------------------------------------------------------
 # What goes in the bundle
-#   README.md and Manual.html stay out: the payload is unpacked to a
+#   README.md and docs\Manual.html stay out: the payload is unpacked to a
 #   temporary folder and deleted again, so documentation shipped inside it
 #   would never be seen by anybody. Those travel separately.
 # ---------------------------------------------------------------------

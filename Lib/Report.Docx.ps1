@@ -249,7 +249,7 @@ function New-PMDocxReport {
     foreach ($res in $Results) { $counts[$res.Status] = $counts[$res.Status] + 1 }
 
     # Font sizes, all anchored to the 16pt body size the government standard
-    # sets for TH Sarabun - see the size table in TECHNICAL.md. Table text
+    # sets for TH Sarabun - see the size table in docs/TECHNICAL.md. Table text
     # runs one step down from body (14) so a wide result table still fits the
     # page without shrinking to the point of looking like a footnote; the
     # bilingual "En" line under each Thai line runs one step down again.
