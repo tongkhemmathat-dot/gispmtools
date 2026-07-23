@@ -18,7 +18,7 @@
 
   "_checksNote": "ทุกหัวข้อเป็นการอ่านค่าเท่านั้น ไม่มีการแก้ไขค่า ไม่ติดตั้งอะไร และไม่รีสตาร์ทเครื่อง",
   "Checks": {
-    "_comment": "รหัสหัวข้อที่ไม่ต้องการให้รันอัตโนมัติ | WU ต้องติดต่อ WSUS หรือ Microsoft Update ซึ่งใช้เวลานานมากและอาจค้าง | CONN เป็นหัวข้อเดียวที่ส่ง ping ออกไปจริง หากมี IPS/IDS อาจถูกมองว่าเป็นการสแกนแล้วบล็อกเครื่อง | AGS ติดต่อ ArcGIS Server Admin API ต้องตั้งค่าการเชื่อมต่อก่อน (เมนูหลัก -> ArcGIS Server connection) | AGSUSAGE อ่านรายงานการใช้งานที่มีอยู่แล้วบนไซต์ ยังไม่เคยตรวจสอบ schema กับไซต์จริง ดู HANDOVER.md | ถ้าต้องการรันเฉพาะครั้งให้สั่ง .\\Start-PMCheck.ps1 -Only CONN",
+    "_comment": "รหัสหัวข้อที่ไม่ต้องการให้รันอัตโนมัติ | WU ต้องติดต่อ WSUS หรือ Microsoft Update ซึ่งใช้เวลานานมากและอาจค้าง | CONN เป็นหัวข้อเดียวที่ส่ง ping ออกไปจริง หากมี IPS/IDS อาจถูกมองว่าเป็นการสแกนแล้วบล็อกเครื่อง | AGS, AGSSVC, AGSUSAGE ติดต่อ ArcGIS Server Admin API ต้องตั้งค่าการเชื่อมต่อก่อน (เมนูหลัก -> ArcGIS Server connection) | ถ้าต้องการรันเฉพาะครั้งให้สั่ง .\\Start-PMCheck.ps1 -Only CONN",
     "Disabled": ["WU", "CONN", "AGS", "AGSSVC", "AGSUSAGE"]
   },
 

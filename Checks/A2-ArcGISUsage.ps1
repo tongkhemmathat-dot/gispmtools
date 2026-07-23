@@ -1,23 +1,45 @@
 # PMtools check - ArcGIS Server usage report totals (requests, response time,
-# timeouts) over whatever window the site's own usage report already covers.
+# timeouts) over whatever window the site's own usage reports already cover.
 # ASCII-only; text comes from i18n.json.
 #
 # Needs a configured connection and is disabled by default, like every other
 # A*-ArcGIS* check - see A0-ArcGISSite.ps1.
 #
 # Read-only, and stricter than the other ArcGIS checks about it: this check
-# is ONLY allowed to read a usage report that already exists on the site.
+# is ONLY allowed to read usage reports that already exist on the site.
 # /usagereports/<name>/data can only answer for a report that has already
-# been created - and creating one is a write. ArcGIS Server Manager creates
-# one automatically the first time someone opens its statistics page, so
-# most managed sites already have one; a site where nobody has ever opened
-# that page has none, and that is reported as an INFO card, not an error.
+# been created - and creating one is a write.
 #
-# AGSSVC deliberately avoids this endpoint for the same reason and reads
-# per-service instance counters instead - see its header comment. This check
-# exists alongside it for the numbers only a usage report carries: total
-# request volume and response time, aggregated for the whole report rather
-# than per service.
+# Schema confirmed against a real site (ArcGIS Server 11.5.0) on 2026-07-23,
+# and it differs from Esri's general documentation in ways that matter:
+#
+#  - /admin/usagereports returns its list under a "metrics" property, not
+#    "usagereports". Each entry is a REPORT DEFINITION (reportname, a
+#    "since" window label, one or more "queries" of resourceURIs+metrics,
+#    and metadata.temp) - not report data.
+#
+#  - ArcGIS Server Manager creates a report every time someone opens its
+#    Statistics page, with metadata.temp = true and a reportname that is a
+#    raw millisecond timestamp. Those are excluded here on purpose: the
+#    name is not stable across runs and the report can expire on its own
+#    (its metadata carries a "tempTimer"). Only metadata.temp = false
+#    (permanent) reports are read - on the test site there were three,
+#    each covering exactly one metric: RequestCount, RequestMaxResponseTime
+#    and RequestsTimedOut, one metric per report rather than one report
+#    with three.
+#
+#  - Querying /usagereports/<name>/data with no other parameters does NOT
+#    fall back to the report's own stored query - it fails server-side with
+#    a bare HTTP 500 ("RequestUtil.getParameterIgnoreCase(...) is null").
+#    A "filter" parameter is required on every call, and the report's own
+#    "since" and "queries" (both already in hand from the list call above)
+#    are exactly what it wants, JSON-encoded.
+#
+#  - Each report-data entry is self-labelled with "metric-type", so metrics
+#    are grouped by that label directly. There is no need to line anything
+#    up positionally against metadata, which is fortunate, because the
+#    metadata field comes back as a JSON-encoded STRING inside the data
+#    response (unlike the list response, where it is a real object).
 
 function Invoke-PMCheckArcGISUsage {
 
@@ -26,93 +48,97 @@ function Invoke-PMCheckArcGISUsage {
 
         $list = Invoke-PMArcGISAdmin -Root $session.Root -Path 'usagereports' -Token $session.Token -TimeoutSec $session.TimeoutSec
 
-        $names = @()
-        foreach ($e in @($list.usagereports)) {
-            if ($e -is [string])                             { $names += $e }
-            elseif ($e.PSObject.Properties['reportname'])     { $names += [string]$e.reportname }
-        }
+        $reports = @(@($list.metrics) | Where-Object {
+            $_ -and $_.metadata -and $_.metadata.PSObject.Properties['temp'] -and $_.metadata.temp -eq $false -and $_.queries
+        })
 
-        if ($names.Count -eq 0) {
+        if ($reports.Count -eq 0) {
             return New-PMResult -Id 'AGSUSAGE' -TitleKey 'agsusage.title' -Status 'INFO' `
                 -SummaryKey 'agsusage.summary.none'
         }
 
-        # Sites can carry more than one saved report (Manager's own "System"
-        # report plus any an administrator created by hand). There is no
-        # reliable way to tell which one an operator cares about from the
-        # Admin API alone, so the first one listed is read - normally the
-        # only one present. The report name actually used is always shown
-        # in the output so this choice is never silent.
-        $reportName = $names[0]
         $findings   = @()
+        $values     = @{}
+        $usedNames  = @()
+        $failedNames = @()
+        $allSlices  = @()
 
-        try {
-            $resp = Invoke-PMArcGISAdmin -Root $session.Root -Path "usagereports/$reportName/data" `
-                                          -Token $session.Token -TimeoutSec $session.TimeoutSec
-        }
-        catch {
-            $findings += New-PMFinding -Severity 'WARN' -TextKey 'agsusage.finding.dataError' -Values @($reportName, $_.Exception.Message)
-            return New-PMResult -Id 'AGSUSAGE' -TitleKey 'agsusage.title' -Status 'WARN' `
-                -SummaryKey 'agsusage.summary.error' -SummaryValues @($reportName) -Findings $findings
-        }
+        foreach ($rep in $reports) {
+            $reportName = [string]$rep.reportname
+            $filter     = [pscustomobject]@{ since = $rep.since; queries = $rep.queries } | ConvertTo-Json -Depth 6 -Compress
+            $encName    = [Uri]::EscapeDataString($reportName)
 
-        $report = $resp.report
-        if (-not $report) {
-            $findings += New-PMFinding -Severity 'WARN' -TextKey 'agsusage.finding.dataError' -Values @($reportName, 'the response carried no report data')
-            return New-PMResult -Id 'AGSUSAGE' -TitleKey 'agsusage.title' -Status 'WARN' `
-                -SummaryKey 'agsusage.summary.error' -SummaryValues @($reportName) -Findings $findings
-        }
+            try {
+                $resp = Invoke-PMArcGISAdmin -Root $session.Root -Path "usagereports/$encName/data" `
+                                              -Token $session.Token -TimeoutSec $session.TimeoutSec `
+                                              -Parameters @{ filter = $filter }
+            }
+            catch {
+                $failedNames += $reportName
+                $findings += New-PMFinding -Severity 'WARN' -TextKey 'agsusage.finding.dataError' -Values @($reportName, $_.Exception.Message)
+                continue
+            }
 
-        # "time-slices" and "report-data" are the literal JSON property names
-        # and are not valid bare PowerShell identifiers (the hyphen), hence
-        # the quoted member access below rather than dot notation.
-        $metrics     = @($report.metadata.metrics)
-        $reportData  = @($report.'report-data')
+            $report = $resp.report
+            if (-not $report) {
+                $failedNames += $reportName
+                $findings += New-PMFinding -Severity 'WARN' -TextKey 'agsusage.finding.dataError' -Values @($reportName, 'the response carried no report data')
+                continue
+            }
 
-        # report-data[i] lines up positionally with metadata.metrics[i]; each
-        # entry there is itself a list of resource entries (normally one, for
-        # the site-wide "services/*" resource) carrying a "data" array
-        # aligned with time-slices. Every level is read defensively because
-        # this shape has never been confirmed against a real site response -
-        # see the "unverified" note in HANDOVER.md.
-        $values = @{}
-        for ($i = 0; $i -lt $metrics.Count; $i++) {
-            $metricName = [string]$metrics[$i].metric
-            if ([string]::IsNullOrWhiteSpace($metricName)) { continue }
+            $usedNames += $reportName
+            foreach ($slice in @($report.'time-slices')) { if ($null -ne $slice) { $allSlices += [double]$slice } }
 
-            $nums = @()
-            if ($i -lt $reportData.Count) {
-                foreach ($entry in @($reportData[$i])) {
-                    foreach ($v in @($entry.data)) {
-                        if ($null -ne $v) { $nums += [double]$v }
+            foreach ($group in @($report.'report-data')) {
+                foreach ($entry in @($group)) {
+                    $metricName = [string]$entry.'metric-type'
+                    if ([string]::IsNullOrWhiteSpace($metricName)) { continue }
+
+                    $nums = @()
+                    foreach ($v in @($entry.data)) { if ($null -ne $v) { $nums += [double]$v } }
+                    if ($nums.Count -eq 0) { continue }
+
+                    # A metric named "...Max..." is a peak and must not be
+                    # summed across time slices or across reports -
+                    # everything else here is a count, and counts are
+                    # summed both within a report and across reports (in
+                    # case a site ever splits the same metric across more
+                    # than one permanent report).
+                    if ($metricName -match 'Max') {
+                        $agg = ($nums | Measure-Object -Maximum).Maximum
+                        if ($values.ContainsKey($metricName)) { $values[$metricName] = [math]::Max($values[$metricName], $agg) }
+                        else                                  { $values[$metricName] = $agg }
+                    }
+                    else {
+                        $agg = ($nums | Measure-Object -Sum).Sum
+                        if ($values.ContainsKey($metricName)) { $values[$metricName] += $agg }
+                        else                                  { $values[$metricName] = $agg }
                     }
                 }
             }
-            if ($nums.Count -eq 0) { continue }
+        }
 
-            # A metric named "...Max..." is a peak and must not be summed
-            # across time slices - everything else here is a count, and
-            # counts are summed.
-            if ($metricName -match 'Max') { $values[$metricName] = ($nums | Measure-Object -Maximum).Maximum }
-            else                          { $values[$metricName] = ($nums | Measure-Object -Sum).Sum }
+        if ($usedNames.Count -eq 0) {
+            return New-PMResult -Id 'AGSUSAGE' -TitleKey 'agsusage.title' -Status 'WARN' `
+                -SummaryKey 'agsusage.summary.error' -SummaryValues @(($failedNames -join ', ')) -Findings $findings
+        }
+
+        if ($values.Count -eq 0) {
+            $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsusage.finding.noMetrics' -Values @(($usedNames -join ', '))
         }
 
         $columns = New-PMItemColumns
         $rows    = @()
 
-        $rows += New-PMItemRow -TextKey 'agsusage.item.report' -Value $reportName
+        $rows += New-PMItemRow -TextKey 'agsusage.item.report' -Value ($usedNames -join ', ')
 
-        $period = ''
-        $start = $report.metadata.temporalinfo.startTime
-        $end   = $report.metadata.temporalinfo.endTime
-        if ($start -and $end -and [double]$start -gt 0 -and [double]$end -gt 0) {
+        if ($allSlices.Count -gt 0) {
             $epoch = New-Object DateTime -ArgumentList 1970, 1, 1, 0, 0, 0, ([DateTimeKind]::Utc)
-            $sDate = $epoch.AddMilliseconds([double]$start).ToLocalTime()
-            $eDate = $epoch.AddMilliseconds([double]$end).ToLocalTime()
+            $sDate = $epoch.AddMilliseconds(($allSlices | Measure-Object -Minimum).Minimum).ToLocalTime()
+            $eDate = $epoch.AddMilliseconds(($allSlices | Measure-Object -Maximum).Maximum).ToLocalTime()
             $period = "{0:yyyy-MM-dd HH:mm} - {1:yyyy-MM-dd HH:mm}" -f $sDate, $eDate
+            $rows += New-PMItemRow -TextKey 'agsusage.item.period' -Value $period
         }
-        elseif ($report.since) { $period = [string]$report.since }
-        if ($period) { $rows += New-PMItemRow -TextKey 'agsusage.item.period' -Value $period }
 
         $timedOut = $null
         if ($values.ContainsKey('RequestsTimedOut')) {
@@ -126,35 +152,35 @@ function Invoke-PMCheckArcGISUsage {
             $rows += New-PMItemRow -TextKey 'agsusage.item.maxResponseMs' -Value $values['RequestMaxResponseTime']
         }
 
-        # Any metric this site's report happens to carry beyond the three
-        # named above is still shown, generically, rather than dropped -
-        # usage reports are configurable per site and the set queried here
-        # is only what one real site was seen to have enabled.
+        # Any metric a site's permanent reports happen to carry beyond the
+        # three named above is still shown, generically, rather than
+        # dropped - which metrics exist is a per-site Manager configuration
+        # choice, not something this check controls.
         foreach ($key in $values.Keys) {
             if ($key -in @('RequestsTimedOut', 'RequestCount', 'RequestMaxResponseTime')) { continue }
             $rows += @{ Item = $key; ItemEn = $key; Value = $values[$key]; ValueEn = ''; _RowStatus = '' }
         }
 
-        if ($values.Count -eq 0) {
-            $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsusage.finding.noMetrics' -Values @($reportName)
+        if ($failedNames.Count -gt 0) {
+            $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsusage.note.partial' -Values @(($failedNames -join ', '))
         }
 
         if ($null -ne $timedOut -and $timedOut -gt 0) {
             $status = Test-PMThreshold -Name 'AGSUsageTimedOutRequests' -Value $timedOut
-            $findings += New-PMFinding -Severity $status -TextKey 'agsusage.finding.timedOut' -Values @($timedOut, $reportName)
+            $findings += New-PMFinding -Severity $status -TextKey 'agsusage.finding.timedOut' -Values @($timedOut, ($usedNames -join ', '))
             $sumKey = 'agsusage.summary.issue'
-            $sumVal = @($reportName, $timedOut)
+            $sumVal = @(($usedNames -join ', '), $timedOut)
         }
         else {
             $status = 'OK'
             $sumKey = 'agsusage.summary.ok'
-            $sumVal = @($reportName)
+            $sumVal = @(($usedNames -join ', '))
         }
 
         return New-PMResult -Id 'AGSUSAGE' -TitleKey 'agsusage.title' -Status $status `
             -SummaryKey $sumKey -SummaryValues $sumVal `
             -Columns $columns -Rows $rows -Findings $findings `
-            -Raw ([pscustomobject]@{ ReportName = $reportName; AvailableReports = $names; Metrics = $values })
+            -Raw ([pscustomobject]@{ ReportsUsed = $usedNames; ReportsFailed = $failedNames; Metrics = $values })
     }
     finally {
         Restore-PMArcGISCertificatePolicy
