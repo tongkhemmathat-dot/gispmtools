@@ -278,105 +278,186 @@ function Show-PMArcGISMenu {
     }
 }
 
-# --- the menu ---------------------------------------------------------------
-# $chosen drives the loop rather than break/continue inside the switch.
+# --- what to check -----------------------------------------------------------
+# A server is either a plain Windows Server with nothing to do with ArcGIS, or
+# a GIS server where the ArcGIS checks are the point - never a useful mix of
+# both in one run. This screen makes that an explicit, exclusive choice
+# up front, rather than something buried in a command-line switch: everything
+# past this point runs ONE of the two groups, never both. Start-PMCheck.ps1's
+# own -Group parameter enforces the same split for anyone calling it directly.
 #
-# PowerShell binds break and continue to the SWITCH, not to an enclosing
-# while: a `continue` in a case exits the switch and falls straight into
-# whatever follows it. The earlier version of this menu ended `while` with a
-# bare `break` after the switch and used `continue` to mean "show the menu
-# again", so pressing an invalid key - or cancelling out of the custom
-# duration prompt - silently started a full assessment instead of redrawing
-# the menu. Verified against the live behaviour, not assumed.
+# Nested in an outer $ready loop rather than recursing back into this script:
+# choosing [B] on the sampling screen below needs to redraw the mode screen,
+# and re-invoking the whole file for that would pile up nested script frames
+# for no reason a loop does not already handle.
+#
+# Same break/continue-binds-to-switch trap noted on the inner loop below
+# applies here too - see that comment for the fuller explanation.
+$mode      = $null
 $minutes   = 0
 $runReport = $true
-$chosen    = $false
+$ready     = $false
 
-while (-not $chosen) {
+while (-not $ready) {
 
-    Clear-Host
-    Write-PMRule
-    Write-Host ("  PMtools {0} - Preventive Maintenance" -f $toolVersion) -ForegroundColor Cyan
-    Write-Host ("  Server: {0}      {1}" -f $env:COMPUTERNAME, (Get-Date).ToString('yyyy-MM-dd HH:mm'))
-    Write-PMRule
-    Write-Host ''
+    $mode = $null
+    while (-not $mode) {
 
-    if (-not (Test-PMIsAdministrator)) {
-        Write-Host '  NOTE: not running as Administrator - some checks will be' -ForegroundColor Yellow
-        # Deliberately does not name a launcher: this same menu ships both
-        # inside the PMtools folder (Run-PM.cmd) and inside the single-file
-        # build (PMtools-<version>.cmd), and both elevate on their own.
-        Write-Host '        incomplete. Close this and re-run the launcher to elevate.' -ForegroundColor Yellow
+        Clear-Host
+        Write-PMRule
+        Write-Host ("  PMtools {0} - Preventive Maintenance" -f $toolVersion) -ForegroundColor Cyan
+        Write-Host ("  Server: {0}      {1}" -f $env:COMPUTERNAME, (Get-Date).ToString('yyyy-MM-dd HH:mm'))
+        Write-PMRule
         Write-Host ''
-    }
 
-    Show-PMExistingData
-
-    # Read fresh each pass so the hint updates immediately after the operator
-    # sets or removes a connection in the submenu.
-    $agsHint = '(not configured)'
-    try {
-        $agsConn = Get-PMArcGISConnection
-        if ($null -ne $agsConn) { $agsHint = '(' + $agsConn.Url + ')' }
-    }
-    catch { $agsHint = '(saved, but unreadable here)' }
-
-    Write-Host '  Collect CPU / memory samples before the assessment?'
-    Write-Host ''
-    Write-Host '   [1]  No sampling - assess now                 ' -NoNewline
-    Write-Host '(about 10 s)' -ForegroundColor DarkGray
-    Write-Host ('   [2]  Sample 15 minutes, then assess           ({0})' -f (Get-PMFinishText 15))
-    Write-Host ('   [3]  Sample {0} minutes, then assess           ({1})' -f $defaultMinutes, (Get-PMFinishText $defaultMinutes))
-    Write-Host ('   [4]  Sample 60 minutes, then assess           ({0})' -f (Get-PMFinishText 60))
-    Write-Host '   [5]  Sample for a custom duration...'
-    Write-Host '   [6]  Sample only - do not build a report'
-    Write-Host ''
-    Write-Host '   [A]  ArcGIS Server connection...            ' -NoNewline
-    Write-Host $agsHint -ForegroundColor DarkGray
-    Write-Host ''
-    Write-Host '   [Q]  Quit'
-    Write-Host ''
-
-    $choice = Read-Host '  Choice [1]'
-    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
-
-    # Every case either sets $chosen (proceed) or leaves it false (redraw).
-    switch ($choice.Trim().ToUpper()) {
-        '1' { $minutes = 0;               $runReport = $true;  $chosen = $true }
-        '2' { $minutes = 15;              $runReport = $true;  $chosen = $true }
-        '3' { $minutes = $defaultMinutes; $runReport = $true;  $chosen = $true }
-        '4' { $minutes = 60;              $runReport = $true;  $chosen = $true }
-        '5' {
-            $custom = Read-PMCustomMinutes
-            if ($custom -gt 0) { $minutes = $custom; $runReport = $true; $chosen = $true }
-        }
-        '6' {
-            $custom = Read-PMCustomMinutes
-            if ($custom -gt 0) { $minutes = $custom; $runReport = $false; $chosen = $true }
-        }
-        'A' { Show-PMArcGISMenu }
-        'Q' { Write-Host ''; Write-Host '  Cancelled.'; Write-Host ''; exit 0 }
-        default {
+        if (-not (Test-PMIsAdministrator)) {
+            Write-Host '  NOTE: not running as Administrator - some checks will be' -ForegroundColor Yellow
+            # Deliberately does not name a launcher: this same menu ships both
+            # inside the PMtools folder (Run-PM.cmd) and inside the single-file
+            # build (PMtools-<version>.cmd), and both elevate on their own.
+            Write-Host '        incomplete. Close this and re-run the launcher to elevate.' -ForegroundColor Yellow
             Write-Host ''
-            Write-Host '  Not a valid choice.' -ForegroundColor Yellow
-            Start-Sleep -Seconds 1
+        }
+
+        # Read fresh each pass so the hint updates immediately after the
+        # operator sets or removes a connection in the submenu.
+        $agsHint = '(not configured)'
+        try {
+            $agsConn = Get-PMArcGISConnection
+            if ($null -ne $agsConn) { $agsHint = '(' + $agsConn.Url + ')' }
+        }
+        catch { $agsHint = '(saved, but unreadable here)' }
+
+        Write-Host '  What do you want to check?'
+        Write-Host ''
+        Write-Host '   [1]  Server - the regular maintenance checks'
+        Write-Host '   [2]  ArcGIS Server - site, services, usage reports  ' -NoNewline
+        Write-Host $agsHint -ForegroundColor DarkGray
+        Write-Host ''
+        Write-Host '   [A]  ArcGIS Server connection...'
+        Write-Host ''
+        Write-Host '   [Q]  Quit'
+        Write-Host ''
+
+        $modeChoice = Read-Host '  Choice [1]'
+        if ([string]::IsNullOrWhiteSpace($modeChoice)) { $modeChoice = '1' }
+
+        switch ($modeChoice.Trim().ToUpper()) {
+            '1' { $mode = 'Server' }
+            '2' {
+                $conn = $null
+                try { $conn = Get-PMArcGISConnection } catch { $conn = $null }
+                if ($null -eq $conn) {
+                    Write-Host ''
+                    Write-Host '  No ArcGIS Server connection is configured yet - set one up first.' -ForegroundColor Yellow
+                    Write-Host ''
+                    Read-Host '  Press Enter to continue' | Out-Null
+                    Show-PMArcGISMenu
+                }
+                else {
+                    $mode = 'ArcGIS'
+                }
+            }
+            'A' { Show-PMArcGISMenu }
+            'Q' { Write-Host ''; Write-Host '  Cancelled.'; Write-Host ''; exit 0 }
+            default {
+                Write-Host ''
+                Write-Host '  Not a valid choice.' -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
         }
     }
+
+    if ($mode -eq 'ArcGIS') { $ready = $true; continue }
+
+    # --- Server mode: how long to sample first -------------------------------
+    # $chosen drives the loop rather than break/continue inside the switch.
+    #
+    # PowerShell binds break and continue to the SWITCH, not to an enclosing
+    # while: a `continue` in a case exits the switch and falls straight into
+    # whatever follows it. An earlier version of this menu ended `while` with
+    # a bare `break` after the switch and used `continue` to mean "show the
+    # menu again", so pressing an invalid key - or cancelling out of the
+    # custom duration prompt - silently started a full assessment instead of
+    # redrawing the menu. Verified against the live behaviour, not assumed.
+    $backToModeScreen = $false
+    $chosen = $false
+
+    while (-not $chosen) {
+
+        Clear-Host
+        Write-PMRule
+        Write-Host ("  PMtools {0} - Preventive Maintenance" -f $toolVersion) -ForegroundColor Cyan
+        Write-Host ("  Server: {0}      {1}" -f $env:COMPUTERNAME, (Get-Date).ToString('yyyy-MM-dd HH:mm'))
+        Write-PMRule
+        Write-Host ''
+
+        Show-PMExistingData
+
+        Write-Host '  Collect CPU / memory samples before the assessment?'
+        Write-Host ''
+        Write-Host '   [1]  No sampling - assess now                 ' -NoNewline
+        Write-Host '(about 10 s)' -ForegroundColor DarkGray
+        Write-Host ('   [2]  Sample 15 minutes, then assess           ({0})' -f (Get-PMFinishText 15))
+        Write-Host ('   [3]  Sample {0} minutes, then assess           ({1})' -f $defaultMinutes, (Get-PMFinishText $defaultMinutes))
+        Write-Host ('   [4]  Sample 60 minutes, then assess           ({0})' -f (Get-PMFinishText 60))
+        Write-Host '   [5]  Sample for a custom duration...'
+        Write-Host '   [6]  Sample only - do not build a report'
+        Write-Host ''
+        Write-Host '   [B]  Back'
+        Write-Host '   [Q]  Quit'
+        Write-Host ''
+
+        $choice = Read-Host '  Choice [1]'
+        if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
+
+        # Every case either sets $chosen (proceed) or leaves it false (redraw).
+        switch ($choice.Trim().ToUpper()) {
+            '1' { $minutes = 0;               $runReport = $true;  $chosen = $true }
+            '2' { $minutes = 15;              $runReport = $true;  $chosen = $true }
+            '3' { $minutes = $defaultMinutes; $runReport = $true;  $chosen = $true }
+            '4' { $minutes = 60;              $runReport = $true;  $chosen = $true }
+            '5' {
+                $custom = Read-PMCustomMinutes
+                if ($custom -gt 0) { $minutes = $custom; $runReport = $true; $chosen = $true }
+            }
+            '6' {
+                $custom = Read-PMCustomMinutes
+                if ($custom -gt 0) { $minutes = $custom; $runReport = $false; $chosen = $true }
+            }
+            'B' { $backToModeScreen = $true; $chosen = $true }
+            'Q' { Write-Host ''; Write-Host '  Cancelled.'; Write-Host ''; exit 0 }
+            default {
+                Write-Host ''
+                Write-Host '  Not a valid choice.' -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+
+    if (-not $backToModeScreen) { $ready = $true }
 }
 
 # --- act on it --------------------------------------------------------------
 Write-Host ''
 
-if ($minutes -gt 0) {
-    & (Join-Path $PMRoot 'Start-PMMonitor.ps1') `
-        -Minutes $minutes -IntervalSeconds $interval -OutputRoot $OutputRoot -ConfigDir $ConfigDir
+if ($mode -eq 'Server') {
+    if ($minutes -gt 0) {
+        & (Join-Path $PMRoot 'Start-PMMonitor.ps1') `
+            -Minutes $minutes -IntervalSeconds $interval -OutputRoot $OutputRoot -ConfigDir $ConfigDir
 
-    if (-not $runReport) {
-        Write-Host 'Sampling finished. Run Run-PM.cmd again and choose 1 to build the report.'
-        Write-Host ''
-        exit 0
+        if (-not $runReport) {
+            Write-Host 'Sampling finished. Run Run-PM.cmd again and choose 1 to build the report.'
+            Write-Host ''
+            exit 0
+        }
     }
+
+    & (Join-Path $PMRoot 'Start-PMCheck.ps1') -Group Server -OutputRoot $OutputRoot -ConfigDir $ConfigDir -OpenReport
+    exit $LASTEXITCODE
 }
 
-& (Join-Path $PMRoot 'Start-PMCheck.ps1') -OutputRoot $OutputRoot -ConfigDir $ConfigDir -OpenReport
+# ArcGIS mode: no sampling question, nothing to trend - just run the three
+# ArcGIS checks against the connection confirmed to exist above.
+& (Join-Path $PMRoot 'Start-PMCheck.ps1') -Group ArcGIS -OutputRoot $OutputRoot -ConfigDir $ConfigDir -OpenReport
 exit $LASTEXITCODE

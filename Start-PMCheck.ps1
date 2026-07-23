@@ -20,6 +20,8 @@
         .\Start-PMCheck.ps1 -OpenReport
         .\Start-PMCheck.ps1 -Only DISK,CERT
         .\Start-PMCheck.ps1 -Skip WU
+        .\Start-PMCheck.ps1 -Group ArcGIS      # only AGS/AGSSVC/AGSUSAGE, connection required
+        .\Start-PMCheck.ps1 -Group Server      # everything except the ArcGIS checks
 #>
 [CmdletBinding()]
 param(
@@ -35,6 +37,19 @@ param(
     # Run everything except these check ids. Useful for -Skip WU, which needs
     # to reach an update source and can be slow on isolated networks.
     [string[]]$Skip,
+
+    # Restrict the run to one side of a hard split: 'Server' is every check
+    # EXCEPT the ArcGIS ones, 'ArcGIS' is ONLY the ArcGIS ones (AGS, AGSSVC,
+    # AGSUSAGE, and any future AGS* check). Not specified: unchanged
+    # behaviour, driven by Checks.Disabled/-Only/-Skip as before.
+    #
+    # Exists because a machine is either a plain Windows Server that has
+    # nothing to do with ArcGIS, or a GIS server where the ArcGIS checks are
+    # the point - never a useful mix of "some server checks and some ArcGIS
+    # checks" in a single run. -Group makes that split explicit and, unlike
+    # -Only, refuses to straddle it: -Group Server rejects an -Only id from
+    # the ArcGIS side and vice versa, rather than silently dropping it.
+    [ValidateSet('Server', 'ArcGIS')][string]$Group,
 
     # Sample CPU and memory for this many minutes BEFORE running the checks, so
     # the report carries a trend chart rather than a single spot reading.
@@ -131,10 +146,43 @@ function Expand-PMIdList {
 $Only = Expand-PMIdList -Values $Only
 $Skip = Expand-PMIdList -Values $Skip
 
+# A Server check reads the local machine; an ArcGIS check (AGS, AGSSVC,
+# AGSUSAGE, and any future AGS* id) reads a remote site over HTTPS. Nothing
+# ever needs both in the same pass, so an -Only that spans both sides is
+# rejected outright rather than quietly run - this holds regardless of
+# whether -Group is also given.
+$arcgisIds = @($checks | Where-Object { $_.Id -like 'AGS*' } | ForEach-Object Id)
+
+if ($Only) {
+    $onlyHasArcGIS = @($Only | Where-Object { $arcgisIds -contains $_ }).Count -gt 0
+    $onlyHasServer = @($Only | Where-Object { $arcgisIds -notcontains $_ }).Count -gt 0
+    if ($onlyHasArcGIS -and $onlyHasServer) {
+        throw ("-Only cannot mix Server and ArcGIS check ids ({0}) in one run. Run them separately." -f ($Only -join ', '))
+    }
+}
+
+if ($Group) {
+    if ($Group -eq 'ArcGIS') { $groupIds = $arcgisIds }
+    else                     { $groupIds = @($checks | Where-Object { $_.Id -notlike 'AGS*' } | ForEach-Object Id) }
+
+    $badOnly = @($Only | Where-Object { $groupIds -notcontains $_ })
+    if ($badOnly.Count -gt 0) {
+        throw ("-Only {0} does not belong to -Group {1}." -f ($badOnly -join ', '), $Group)
+    }
+
+    $checks = @($checks | Where-Object { $groupIds -contains $_.Id })
+}
+
 if ($Only) {
     # An explicit -Only is the operator asking for exactly these, so it also
     # overrides the disabled list in settings.json.
     $checks = @($checks | Where-Object { $Only -contains $_.Id })
+}
+elseif ($Group -eq 'ArcGIS') {
+    # Same override, extended to an explicit -Group ArcGIS: the ArcGIS
+    # checks are disabled by default precisely so they never show up
+    # uninvited, but naming the group is exactly that invitation, so
+    # Checks.Disabled does not apply here.
 }
 else {
     $disabled = @(Get-PMSetting -Path 'Checks.Disabled' -Default @())

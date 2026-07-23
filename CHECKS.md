@@ -67,10 +67,17 @@
 ### สั่งรัน
 
 ```powershell
-.\Start-PMCheck.ps1 -Only AGS,AGSSVC,AGSUSAGE     # รันเฉพาะหัวข้อ ArcGIS
+.\Start-PMCheck.ps1 -Group ArcGIS                 # ครบทั้งสามหัวข้อ ArcGIS ในคำสั่งเดียว บายพาส Checks.Disabled
+.\Start-PMCheck.ps1 -Only AGS,AGSSVC,AGSUSAGE     # เทียบเท่ากัน เจาะจงทีละ id
 ```
 
+**`-Group Server`/`-Group ArcGIS` แยกสองกลุ่มออกจากกันเด็ดขาด** — เมนูหลัก (`Run-PM.cmd`) ก็ถาม
+ตั้งแต่หน้าแรกว่าจะตรวจ Server หรือ ArcGIS Server เพราะเครื่องแม่ข่ายทั่วไปกับไซต์ ArcGIS Server
+ไม่มีเหตุผลต้องตรวจรวมกันในรอบเดียว `-Only` ที่ผสมหัวข้อ Server กับ ArcGIS
+(เช่น `-Only DISK,AGS`) จะถูกปฏิเสธพร้อมข้อความบอกให้รันแยกสองรอบแทน ไม่ว่าจะระบุ `-Group` หรือไม่
+
 หรือลบ `"AGS"`, `"AGSSVC"` และ `"AGSUSAGE"` ออกจาก `Checks.Disabled` ใน `Config\settings.json` เพื่อให้รันทุกครั้ง
+(ใช้กับการรันแบบไม่ระบุ `-Group`/`-Only` เลย)
 
 ### `AGSSVC` — บริการแผนที่
 
