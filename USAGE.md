@@ -76,6 +76,22 @@
 
 ---
 
+## ตรวจ ArcGIS Server
+
+หัวข้อ `AGS`, `AGSSVC` และ `AGSUSAGE` ปิดไว้เป็นค่าเริ่มต้นและต้อง**ตั้งค่าการเชื่อมต่อก่อน**
+ผ่านเมนูหลัก -> `ArcGIS Server connection...` (ดูขั้นตอนเต็มใน [Manual.html](Manual.html) หรือ
+[CHECKS.md](CHECKS.md#arcgis-server))
+
+```powershell
+.\Start-PMCheck.ps1 -Only AGS,AGSSVC,AGSUSAGE    # เฉพาะหัวข้อ ArcGIS
+.\Start-PMCheck.ps1 -Only AGS                    # เฉพาะสถานะไซต์และเครื่อง
+```
+
+หรือลบ `"AGS"`, `"AGSSVC"` และ `"AGSUSAGE"` ออกจาก `Checks.Disabled` ใน `Config\settings.json`
+เพื่อให้รันรวมกับหัวข้ออื่นทุกครั้งโดยไม่ต้องพิมพ์ `-Only`
+
+---
+
 ## กราฟแนวโน้ม CPU / หน่วยความจำ
 
 หัวข้อ `PERF` เป็นการอ่านค่า ณ วินาทีที่ตรวจ ซึ่งตอบไม่ได้ว่าภาระงานสูงต่อเนื่องหรือแค่กระชากชั่วครู่

@@ -141,10 +141,11 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
     <li><a href="#s7">วิธีอ่านรายงาน</a></li>
     <li><a href="#s8">กราฟแนวโน้ม CPU และหน่วยความจำ</a></li>
     <li><a href="#s9">หัวข้อที่ตรวจทั้งหมด</a></li>
-    <li><a href="#s10">การตั้งค่า</a></li>
-    <li><a href="#s11">สั่งงานจาก PowerShell</a></li>
-    <li><a href="#s12">ปัญหาที่พบบ่อย</a></li>
-    <li><a href="#s13">ข้อจำกัดที่ควรทราบ</a></li>
+    <li><a href="#s10">ตรวจ ArcGIS Server</a></li>
+    <li><a href="#s11">การตั้งค่า</a></li>
+    <li><a href="#s12">สั่งงานจาก PowerShell</a></li>
+    <li><a href="#s13">ปัญหาที่พบบ่อย</a></li>
+    <li><a href="#s14">ข้อจำกัดที่ควรทราบ</a></li>
   </ol>
 </div>
 
@@ -195,8 +196,8 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <li><strong>ไม่รีสตาร์ทเครื่อง</strong> และไม่สั่งอะไรที่ทำให้บริการสะดุด</li>
 </ul>
 
-<h3>สองหัวข้อที่ปิดไว้เป็นค่าเริ่มต้น</h3>
-<p>เป็นเพียงสองหัวข้อที่ต้องติดต่อออกนอกเครื่อง จึงปิดไว้ก่อนเพื่อความปลอดภัย</p>
+<h3>ห้าหัวข้อที่ปิดไว้เป็นค่าเริ่มต้น</h3>
+<p>เป็นหัวข้อที่ต้องติดต่อออกนอกเครื่อง จึงปิดไว้ก่อนเพื่อความปลอดภัย</p>
 
 <div class="tablewrap">
 <table>
@@ -206,11 +207,17 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
         <td>ใช้เวลานานมาก และค้างได้บนเครือข่ายปิด ทดสอบแล้วค้างเกิน 10 นาที</td><td class="mono">-Only WU</td></tr>
     <tr><td class="mono">CONN</td><td>ทดสอบ ping ไปยังเกตเวย์และเซิร์ฟเวอร์ชื่อโดเมนทุกตัว</td>
         <td>ถ้าหน่วยงานมีอุปกรณ์ IPS/IDS อาจมองว่าเป็นการสแกนแล้วบล็อกเครื่อง</td><td class="mono">-Only CONN</td></tr>
+    <tr><td class="mono">AGS</td><td>ตรวจ ArcGIS Server ผ่าน Administrator API — ดู<a href="#s10">หัวข้อที่ 10</a></td>
+        <td>ต้องเชื่อมต่อไปยัง ArcGIS Server และต้องตั้งค่าการเชื่อมต่อก่อนใช้งาน</td><td class="mono">-Only AGS</td></tr>
+    <tr><td class="mono">AGSSVC</td><td>ตรวจบริการแผนที่บน ArcGIS Server — ดู<a href="#s10">หัวข้อที่ 10</a></td>
+        <td>เหตุผลเดียวกับ <span class="mono">AGS</span></td><td class="mono">-Only AGSSVC</td></tr>
+    <tr><td class="mono">AGSUSAGE</td><td>อ่านรายงานการใช้งาน ArcGIS Server — ดู<a href="#s10">หัวข้อที่ 10</a></td>
+        <td>เหตุผลเดียวกับ <span class="mono">AGS</span></td><td class="mono">-Only AGSUSAGE</td></tr>
   </tbody>
 </table>
 </div>
 
-<p>อีก 13 หัวข้อที่เหลือเป็นการอ่านค่าในเครื่องล้วน ๆ <strong>ไม่ส่งแพ็กเก็ตออกนอกเครื่องเลยแม้แต่แพ็กเก็ตเดียว</strong></p>
+<p>อีก 14 หัวข้อที่เหลือเป็นการอ่านค่าในเครื่องล้วน ๆ <strong>ไม่ส่งแพ็กเก็ตออกนอกเครื่องเลยแม้แต่แพ็กเก็ตเดียว</strong></p>
 </section>
 
 <!-- 3 -->
@@ -335,7 +342,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <pre><code>PMtools-1.2.0.cmd -ExtractConfig</code></pre>
 
 <p>จะได้โฟลเดอร์ <span class="mono">Config\</span> ออกมาวางข้างไฟล์ แก้ <span class="mono">settings.json</span>
-ด้วย Notepad ตาม<a href="#s10">หัวข้อที่ 10</a> ได้เลย รอบถัดไปเครื่องมือจะหยิบค่าที่แก้ไว้ไปใช้เอง
+ด้วย Notepad ตาม<a href="#s11">หัวข้อที่ 11</a> ได้เลย รอบถัดไปเครื่องมือจะหยิบค่าที่แก้ไว้ไปใช้เอง
 ไม่ต้องสั่งอะไรเพิ่ม และจะขึ้นบรรทัด <span class="mono">Config override</span> บอกให้ทราบว่าใช้ค่าที่แก้แล้ว</p>
 
 <div class="callout c-info">
@@ -346,7 +353,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 
 <h3>สั่งเฉพาะบางหัวข้อ</h3>
 
-<p>ใช้สวิตช์ชุดเดียวกับ<a href="#s11">หัวข้อที่ 11</a> ได้ทั้งหมด เพียงเรียกผ่านชื่อไฟล์นี้แทน</p>
+<p>ใช้สวิตช์ชุดเดียวกับ<a href="#s12">หัวข้อที่ 12</a> ได้ทั้งหมด เพียงเรียกผ่านชื่อไฟล์นี้แทน</p>
 
 <pre><code>PMtools-1.2.0.cmd -Only DISK,CERT
 PMtools-1.2.0.cmd -Skip EVT
@@ -418,7 +425,7 @@ PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
 <p>ชื่อหน่วยงาน ส่วนงาน ชื่อระบบ และผู้ตรวจสอบ
 <strong>อ่านจาก <span class="mono">Config\settings.json</span> ของเครื่องที่รันตัวแปลงนี้</strong>
 ไม่ใช่จากไฟล์ <span class="mono">PM-Data.json</span> — ไฟล์นั้นไม่ได้เก็บค่ากลุ่มนี้ไว้โดยตั้งใจ
-แก้ค่าที่ <span class="mono">Config\settings.json</span> ตาม<a href="#s10">หัวข้อที่ 10</a> ได้ตามปกติ
+แก้ค่าที่ <span class="mono">Config\settings.json</span> ตาม<a href="#s11">หัวข้อที่ 11</a> ได้ตามปกติ
 ก่อนรันคำสั่งข้างต้น</p>
 
 <h3>ข้อจำกัดของรุ่นนี้</h3>
@@ -595,6 +602,9 @@ PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
     <tr><td class="mono">REBOOT</td><td>สถานะการรอเริ่มระบบใหม่</td><td>มีรายการค้างรอการรีสตาร์ท</td></tr>
     <tr><td class="mono">CONN</td><td>การเชื่อมต่อเครือข่าย</td><td>ping ไม่ผ่าน — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
     <tr><td class="mono">WU</td><td>รายการปรับปรุงที่ค้างติดตั้ง</td><td>มีรายการค้าง — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
+    <tr><td class="mono">AGS</td><td>สถานะไซต์ ArcGIS Server (เวอร์ชัน + เครื่องในไซต์)</td><td>เครื่องในไซต์ไม่ทำงาน — <strong>ปิดไว้เป็นค่าเริ่มต้น ต้องตั้งค่าการเชื่อมต่อก่อน</strong> ดู<a href="#s10">หัวข้อที่ 10</a></td></tr>
+    <tr><td class="mono">AGSSVC</td><td>บริการแผนที่: สถานะ อินสแตนซ์ จำนวนคำขอ</td><td>บริการที่ควรทำงานแต่หยุด — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
+    <tr><td class="mono">AGSUSAGE</td><td>รายงานการใช้งาน: คำขอสะสม เวลาตอบสนอง คำขอหมดเวลา</td><td>คำขอหมดเวลา — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
   </tbody>
 </table>
 </div>
@@ -602,7 +612,97 @@ PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
 
 <!-- 10 -->
 <section id="s10">
-<h2><span class="n">10</span>การตั้งค่า</h2>
+<h2><span class="n">10</span>ตรวจ ArcGIS Server</h2>
+
+<p>สามหัวข้อ <span class="mono">AGS</span>, <span class="mono">AGSSVC</span> และ <span class="mono">AGSUSAGE</span>
+ตรวจสถานะ <strong>ArcGIS Server</strong> ผ่าน Administrator API ของไซต์เอง เหมาะกับหน่วยงานที่มีเครื่องแม่ข่าย
+GIS แยกต่างหาก เป็นการ<strong>อ่านค่าอย่างเดียวเหมือนหัวข้ออื่นทุกประการ</strong> แต่ปิดไว้เป็นค่าเริ่มต้น
+เพราะต้องเชื่อมต่อออกนอกเครื่องไปยัง ArcGIS Server และต้อง<strong>ตั้งค่าการเชื่อมต่อก่อนใช้งานครั้งแรก</strong></p>
+
+<h3>ตั้งค่าการเชื่อมต่อ (ทำครั้งเดียว)</h3>
+<ol class="steps">
+  <li>
+    <div class="h">เปิดเมนูหลัก แล้วเลือก ArcGIS Server connection</div>
+    <p>ดับเบิลคลิก <span class="mono">Run-PM.cmd</span> (หรือไฟล์เดียวจาก<a href="#s4">หัวข้อที่ 4</a>)
+    แล้วเลือก <strong><span class="mono">[A]  ArcGIS Server connection...</span></strong> จากเมนู</p>
+  </li>
+  <li>
+    <div class="h">เลือก [1] เพื่อกรอกข้อมูลการเชื่อมต่อ</div>
+    <p>กรอกที่อยู่ไซต์ ชื่อบัญชี และรหัสผ่าน เมนูจะแสดงตัวอย่างให้ครบทั้งสามช่อง</p>
+  </li>
+  <li>
+    <div class="h">ทดสอบการเชื่อมต่อ</div>
+    <p>เมนูมีตัวเลือกทดสอบให้ทันที จะบอกผลว่าเชื่อมต่อได้หรือไม่ พร้อมเวอร์ชันของไซต์ที่เชื่อมต่อ
+    ถ้าเชื่อมต่อไม่ได้ ข้อความจะบอกสาเหตุตรง ๆ เช่น รหัสผ่านผิด หรือที่อยู่ไซต์ไม่ถูกต้อง</p>
+  </li>
+</ol>
+
+<h3>ที่อยู่ไซต์ กรอกอย่างไร</h3>
+<p>กรอกโดย<strong>ไม่ต้องมี <span class="mono">/admin</span> ต่อท้าย</strong> (ถ้าติดมาระบบจะตัดให้เอง)</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>รูปแบบที่กรอก</th><th>ระบบจะแปลงเป็น</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">https://gis.example.go.th/server</td><td>เหมือนเดิม (ผ่าน Web Adaptor — พบบ่อยที่สุด)</td></tr>
+    <tr><td class="mono">https://gisserver.example.go.th:6443</td><td class="mono">.../arcgis</td></tr>
+    <tr><td class="mono">https://localhost:6443</td><td class="mono">.../arcgis</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout c-info">
+  <div class="t">ควรใช้บัญชีที่อ่านอย่างเดียว</div>
+  <p>ไม่จำเป็นต้องใช้ primary site administrator เพราะ PMtools อ่านค่าเท่านั้น
+  บัญชีที่มีสิทธิ์อ่านสถานะไซต์ก็เพียงพอแล้ว</p>
+</div>
+
+<div class="callout c-ok">
+  <div class="t">รหัสผ่านเก็บแยกและเข้ารหัสไว้</div>
+  <p>รหัสผ่านเก็บที่ <span class="mono">%LOCALAPPDATA%\PMtools\arcgis-connection.xml</span>
+  เข้ารหัสด้วย Windows DPAPI ซึ่งผูกกับบัญชีผู้ใช้และเครื่องที่ตั้งค่าไว้เท่านั้น
+  <strong>ไม่ได้เก็บใน <span class="mono">Config\settings.json</span></strong> ที่ขึ้น git และแจกไปพร้อมไฟล์เดียว</p>
+</div>
+
+<h3>สามหัวข้อตรวจอะไรบ้าง</h3>
+<div class="tablewrap">
+<table>
+  <thead><tr><th class="mono">รหัส</th><th>ตรวจอะไร</th><th>ขึ้นวิกฤตเมื่อไร</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">AGS</td><td>เวอร์ชันไซต์ และสถานะเครื่องทุกเครื่องในไซต์</td>
+        <td>มีเครื่องที่ไม่ทำงาน</td></tr>
+    <tr><td class="mono">AGSSVC</td><td>สถานะบริการแผนที่ทุกตัว จำนวนอินสแตนซ์ที่ใช้ และจำนวนคำขอสะสม</td>
+        <td>บริการที่ตั้งค่าให้ทำงานแต่หยุดอยู่จริง (บริการที่ปิดไว้โดยตั้งใจไม่นับเป็นปัญหา)</td></tr>
+    <tr><td class="mono">AGSUSAGE</td><td>คำขอสะสม เวลาตอบสนองสูงสุด และคำขอที่หมดเวลา จากรายงานที่มีอยู่แล้วบนไซต์</td>
+        <td>มีคำขอที่หมดเวลาแม้แต่รายการเดียว</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>สั่งรัน</h3>
+<pre><code>.\Start-PMCheck.ps1 -Only AGS,AGSSVC,AGSUSAGE     # เฉพาะหัวข้อ ArcGIS
+.\Start-PMCheck.ps1                               # ปกติ - ยังไม่รวมหัวข้อ ArcGIS จนกว่าจะเปิดไว้</code></pre>
+
+<p>ถ้าต้องการให้รันทุกครั้งโดยไม่ต้องพิมพ์ <span class="mono">-Only</span> ทุกรอบ
+ให้ลบ <span class="mono">"AGS"</span>, <span class="mono">"AGSSVC"</span> และ <span class="mono">"AGSUSAGE"</span>
+ออกจาก <span class="mono">Checks.Disabled</span> ใน <span class="mono">Config\settings.json</span>
+ตาม<a href="#s11">หัวข้อที่ 11</a></p>
+
+<div class="callout c-ok">
+  <div class="t">ยังอ่านค่าอย่างเดียวเหมือนหัวข้ออื่นทุกประการ</div>
+  <p>ทั้งสามหัวข้อใช้ <span class="mono">GET</span> ทั้งหมด ยกเว้นขั้นตอนขอ token ที่เป็น <span class="mono">POST</span>
+  เพราะ API ของ ArcGIS Server บังคับให้รหัสผ่านเดินทางใน request body ไม่ใช่เพราะมันเขียนอะไร
+  หัวข้อ <span class="mono">AGSUSAGE</span> อ่านได้เฉพาะรายงานที่<strong>มีอยู่แล้ว</strong>บนไซต์
+  จะไม่สั่งสร้างรายงานใหม่เด็ดขาด</p>
+</div>
+
+<p>รายละเอียดเชิงลึกกว่านี้ (schema ของ API, เกณฑ์ configured เทียบ realTime ฯลฯ) อยู่ใน
+<span class="mono">CHECKS.md</span> หัวข้อ <em>ArcGIS Server</em> สำหรับผู้ดูแลเครื่องมือ</p>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+<h2><span class="n">11</span>การตั้งค่า</h2>
 
 <p>ไฟล์ตั้งค่าอยู่ในโฟลเดอร์ <code>Config\</code> ทั้งหมด แก้ด้วย Notepad ได้เลย
 <strong>แก้แล้วมีผลทันทีในการรันครั้งถัดไป ไม่ต้องแก้สคริปต์</strong></p>
@@ -665,8 +765,8 @@ PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
 </section>
 
 <!-- 11 -->
-<section id="s11">
-<h2><span class="n">11</span>สั่งงานจาก PowerShell</h2>
+<section id="s12">
+<h2><span class="n">12</span>สั่งงานจาก PowerShell</h2>
 
 <p>สำหรับผู้ที่ต้องการควบคุมเพิ่มเติม หรือต้องการนำไปตั้งเป็นงานตามกำหนดเวลา
 สามารถสั่งตรงได้โดยไม่ผ่านเมนู</p>
@@ -696,8 +796,8 @@ PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
 </section>
 
 <!-- 12 -->
-<section id="s12">
-<h2><span class="n">12</span>ปัญหาที่พบบ่อย</h2>
+<section id="s13">
+<h2><span class="n">13</span>ปัญหาที่พบบ่อย</h2>
 
 <h3>ดับเบิลคลิกแล้วหน้าต่างปิดทันที</h3>
 <p>มักเกิดจากนโยบายการรันสคริปต์ ให้ลองเปิด PowerShell ด้วยสิทธิ์ผู้ดูแลระบบแล้วสั่ง</p>
@@ -734,6 +834,12 @@ PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
 ถ้าหน่วยงานใช้ระบบสำรองข้อมูลยี่ห้ออื่น ให้เพิ่มคำค้นใน <code>Backup.TaskKeywords</code>
 หรือหากการสำรองข้อมูลทำจากระบบภายนอกเครื่องนี้ ก็ถือว่าเป็นผลปกติ</p>
 
+<h3>เปิดหัวข้อ ArcGIS แล้วขึ้นว่า "No ArcGIS Server connection is configured"</h3>
+<p>แปลว่ายังไม่เคยตั้งค่าการเชื่อมต่อบนเครื่องนี้ ให้เปิดเมนูหลักแล้วเลือก
+<strong><span class="mono">[A]  ArcGIS Server connection...</span></strong> ก่อน ดู<a href="#s10">หัวข้อที่ 10</a>
+การตั้งค่าผูกกับบัญชี Windows และเครื่องที่ตั้งไว้เท่านั้น ถ้าเปลี่ยนไปรันด้วยบัญชีอื่นหรือย้ายไปอีกเครื่อง
+ต้องตั้งค่าใหม่</p>
+
 <h3>ระหว่างรันแล้วเครือข่ายไม่เสถียร</h3>
 <p>เคยพบอาการนี้บนเครื่องที่ทำ NIC Teaming และได้แก้ไขแล้ว โดยเปลี่ยนไปอ่านข้อมูลเครือข่าย
 ด้วยวิธีที่ไม่แตะไดรเวอร์การ์ดเครือข่าย หากยังพบอาการอยู่ ให้ลองตัดหัวข้อเครือข่ายออกเพื่อยืนยัน</p>
@@ -741,8 +847,8 @@ PMtools-1.2.0.cmd -MonitorMinutes 30</code></pre>
 </section>
 
 <!-- 13 -->
-<section id="s13">
-<h2><span class="n">13</span>ข้อจำกัดที่ควรทราบ</h2>
+<section id="s14">
+<h2><span class="n">14</span>ข้อจำกัดที่ควรทราบ</h2>
 
 <div class="callout c-warn">
   <div class="t">ยังไม่ได้ทดสอบบน Windows Server จริง</div>
