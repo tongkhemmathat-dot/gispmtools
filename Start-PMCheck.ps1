@@ -87,7 +87,7 @@ if ([string]::IsNullOrWhiteSpace($ConfigDir))  { $ConfigDir  = Join-Path $PMRoot
 Initialize-PMCore -ConfigDir $ConfigDir
 Set-PMOutputRoot -Path $OutputRoot
 
-$toolVersion = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.5')
+$toolVersion = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.6')
 
 Write-PMLog ""
 Write-PMLog "PMtools $toolVersion - Preventive Maintenance assessment" -Level Step

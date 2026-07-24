@@ -1,6 +1,6 @@
 ﻿# บันทึกส่งงาน PMtools — ทำต่อหลังวันที่ 24 กรกฎาคม 2569
 
-สรุป ณ วันที่ 24 กรกฎาคม 2569 (อัปเดตหลังออก v1.7.5) สำหรับใช้ทำงานต่อ
+สรุป ณ วันที่ 24 กรกฎาคม 2569 (อัปเดตหลังออก v1.7.6) สำหรับใช้ทำงานต่อ
 
 ไฟล์นี้เก็บ **สถานะงานและสิ่งที่ค้าง** ส่วนวิธีใช้งานอยู่ใน [README.md](../README.md)
 และเอกสารที่ README.md ชี้ไปต่อ (ทั้งหมดอยู่ในโฟลเดอร์นี้ `docs/`: USAGE.md, DISTRIBUTION.md,
@@ -14,14 +14,13 @@ CHECKS.md, TECHNICAL.md)
 
 เครื่องมืออยู่ที่ `D:\PMtools` ขึ้น GitHub แล้วที่
 [tongkhemmathat-dot/gispmtools](https://github.com/tongkhemmathat-dot/gispmtools) (private)
-**ยังไม่ได้ push commit ล่าสุดขึ้น GitHub (Portal-federated auth, `Build-PM.cmd`, และ bump v1.7.5
-นี้) — สั่ง `git push` เมื่อพร้อม ไม่มีอะไรค้างใน working tree — รุ่นล่าสุดที่ทำในเครื่องคือ v1.7.5**
+**push ครบทุก commit แล้ว ไม่มีอะไรค้างใน working tree — รุ่นล่าสุดที่ออกคือ v1.7.6**
 
 มี **21 หัวข้อตรวจ** โดย 14 หัวข้อรันเป็นค่าเริ่มต้น ใช้เวลาราว 6.5 วินาที
 อีก 7 หัวข้อปิดไว้ (`WU`, `CONN`, `AGS`, `AGSSVC`, `AGSUSAGE`, `AGSDATA`, `AGSLOG`)
 
-**นับจากรุ่น v1.2.0 ถึง v1.7.4 (ทั้งหมดวันที่ 23 ก.ค. 2569 เดียวกัน) แล้วจึง v1.7.5 (24 ก.ค. 2569)**
-เพิ่มเข้ามาตามลำดับ:
+**นับจากรุ่น v1.2.0 ถึง v1.7.4 (ทั้งหมดวันที่ 23 ก.ค. 2569 เดียวกัน) แล้วจึง v1.7.5 และ v1.7.6
+(ทั้งคู่ 24 ก.ค. 2569)** เพิ่มเข้ามาตามลำดับ:
 ครบ 5 หัวข้อ ArcGIS (`AGS`/`AGSSVC`/`AGSUSAGE`/`AGSDATA`/`AGSLOG`), พารามิเตอร์
 `-Group Server|ArcGIS` แยกสองกลุ่มไม่ให้รันปนกัน, กราฟจำนวนคำขอรายช่วงเวลาใน `AGSUSAGE`
 (ภาพรวมทั้งไซต์ ใช้ข้อมูลที่มีอยู่แล้ว ไม่ต้องรอเก็บสะสม), เส้นกริดกราฟปรับให้เป็นจำนวนเต็มที่
@@ -31,13 +30,27 @@ CHECKS.md, TECHNICAL.md)
 โฟลเดอร์ `docs/` เพื่อให้ root ของ repo อ่านง่ายขึ้นสำหรับผู้ที่เพิ่งเข้ามาดูใน GitHub (v1.7.2)
 แก้ไฟล์นี้เองต่อ (v1.7.3) เพิ่มตัวอย่างคำสั่งไฟล์เดียวแบบรอบเดียวจบลงใน `README.md` โดยตรง
 แทนที่จะให้ผู้ใช้ต้องคลิกไปดู `DISTRIBUTION.md` ก่อน (v1.7.4) — สี่รุ่นนี้ไม่มีการเปลี่ยนพฤติกรรมของ
-โค้ดเลย และล่าสุดเพิ่มการล็อกอินผ่าน Portal for ArcGIS สำหรับไซต์ที่ federate กับ Portal
-(`AuthMode`/`PortalUrl` ใน `Get-PMArcGISToken`/`Save-PMArcGISConnection` ขอ token จาก
-`<portal>/sharing/rest/generateToken` แทน `<site>/admin/generateToken` เมื่อเลือกโหมดนี้ตอนตั้งค่า
-การเชื่อมต่อ — ค่าเริ่มต้นยังเป็นโหมด Server เดิม ไฟล์เชื่อมต่อเก่าอ่านกลับมาเป็น Server อัตโนมัติ ไม่ต้อง
-ตั้งค่าใหม่) พร้อม `Build-PM.cmd` ตัว launcher ใหม่สำหรับ `Build-PMSingle.ps1` (ไม่ต้องพิมพ์
-`powershell -ExecutionPolicy Bypass` เอง) เป็น v1.7.5 — การล็อกอินผ่าน Portal ยังไม่เคยทดสอบกับไซต์
-Portal+Server ที่ federate กันจริง เพราะสภาพแวดล้อมนี้ไม่มีไซต์แบบนั้นให้ทดสอบ
+โค้ดเลย จากนั้นเพิ่มการล็อกอินผ่าน Portal for ArcGIS สำหรับไซต์ที่ federate กับ Portal
+(`AuthMode`/`PortalUrl` ใน `Get-PMArcGISToken`/`Save-PMArcGISConnection`) พร้อม `Build-PM.cmd`
+ตัว launcher ใหม่สำหรับ `Build-PMSingle.ps1` เป็น v1.7.5
+
+**v1.7.6 คือรอบแก้ตามผลทดสอบกับไซต์ Portal+Server ที่ federate กันจริงไซต์แรก** (ผู้ใช้ทดสอบเอง
+ยังไม่มีไซต์แบบนี้ในสภาพแวดล้อมนี้) เจอและแก้ทีละชั้นจนครบทั้งห้าหัวข้อ ArcGIS: (1) `generateToken`
+ที่ Portal ตอบ token กลับมาโดยไม่ได้แปลว่ารหัสผ่านถูกเสมอไป เพิ่มการยืนยัน token ผ่าน
+`<portal>/sharing/rest/community/self` ทันทีหลัง sign-in (2) **สาเหตุจริงของปัญหา "ดูเหมือน OK
+ทั้งที่ token ผิด"**: `Invoke-PMArcGISAdmin` เดิมรู้จัก error เฉพาะ shape `{"error":{...}}` ไม่รู้จัก
+`{"status":"error","messages":[...]}` ที่ `/admin/info`, `/admin/machines`, `data/findItems`,
+`logs/query` ใช้ตอบ token ที่ถูกปฏิเสธ ทำให้ token ที่ถูกปฏิเสธดูเหมือนไซต์ปกติว่างเปล่าทุกจุด — ย้าย
+การเช็คมาไว้กลาง ยกเว้น `data/validateDataItem` ที่ shape นี้เป็นผลลัพธ์ปกติ (3) token ของ Portal ใช้
+กับ Admin API ของ Server ไม่ได้เลย (`Invalid token` ทุกจุด) แม้ sign-in ถูกต้อง — สาเหตุคือ
+`client=requestip` ผูก token กับ IP ที่ Portal เห็น ซึ่งต่างจาก IP ที่ Server เห็นเมื่อ Portal กับ Server
+อยู่หลัง reverse proxy คนละตัว แก้ด้วย `client=referer` แทนสำหรับโหมด Portal (4) `AGSDATA` เจอว่า
+`validateDataItem` ตรวจ item ของ ArcGIS Data Store เอง (`nosql`/`objectStore`) ไม่ได้เลย (NPE จาก
+โค้ด Java ของ Esri) มี operation แยกต่างหาก (`data/items/<path>/machines/<name>/validate`) ที่ใช้ได้
+จริงกับ `objectStore` แต่ `nosql` มีพฤติกรรมไม่คงที่ระหว่าง sub-type (บางตัว validate ได้จริง บางตัว
+ไม่มี operation นี้เลย) จึงตัด `nosql` ออกจากการตรวจสอบทั้งหมดตามคำขอ เหลือ `egdb`/`objectStore` ที่
+ตรวจสอบจริง — ทดสอบกับไซต์จริงจนครบทั้งห้าหัวข้อ ผ่านหมด (รวม `AGSLOG` ที่เจอ WARNING จริงจาก log ของ
+ไซต์เอง เรื่อง in-memory cache ที่ยังไม่ได้ติดตั้ง ซึ่งตรงกับที่ `AGSDATA` เจอด้วยคนละทาง)
 — รายละเอียดแต่ละอย่างอยู่ในหัวข้อย่อยด้านล่างตามลำดับเวลาที่ทำจริง
 
 ```powershell
@@ -420,7 +433,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File 'D:\PMtools\Show-PMMenu.ps1'
 ซึ่งทำให้ทดสอบอัตโนมัติไม่ได้ ให้เรียกท่อน PowerShell ตรง ๆ แบบเดียวกับที่ label `:elevated` ทำ
 
 ```powershell
-$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.7.5.cmd'
+$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.7.6.cmd'
 $boot = '$t=[IO.File]::ReadAllText($env:PM_SELF); $m=''#PM''+''TOOLS_PAYLOAD#''; & ([scriptblock]::Create($t.Substring($t.IndexOf($m))))'
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$boot -Only DISK"
 ```
@@ -757,11 +770,6 @@ mock เดิมที่ `scratchpad\mock-arcgis-usage.ps1` **เขียน 
 - แปลง URL, token, `/info`, `/machines`, `/machines/<name>/status` ครบเส้นทาง
 - **โครงสร้าง JSON ของ `/usagereports` และ `/usagereports/<ชื่อ>/data`** (23 ก.ค.) — ดูหัวข้อ
   `AGSUSAGE` ด้านบนสำหรับรายละเอียดที่ต่างจากที่เดาไว้ตอนแรก
-
-### ยังไม่ได้ยืนยัน
-
-- **self-signed certificate** — ไซต์ที่ทดสอบใช้ใบรับรองจริง `Disable-PMArcGISCertificateCheck`
-  จึงยังไม่เคยถูกใช้งานจริง
 - **Portal-tier authentication** — เพิ่มแล้วใน `Lib\ArcGIS.ps1`: `Get-PMArcGISToken` รับ
   พารามิเตอร์ `AuthMode` (`Server`/`Portal`) และ `PortalUrl` เมื่อเลือก `Portal` จะขอ token จาก
   `<portal>/sharing/rest/generateToken` แทน `<site>/admin/generateToken` (ผ่าน `Get-PMArcGISPortalRoot`
@@ -770,8 +778,8 @@ mock เดิมที่ `scratchpad\mock-arcgis-usage.ps1` **เขียน 
   `ArcGIS Server connection` -> `[1]` จะถามว่าไซต์ federate กับ Portal หรือไม่ ถ้าตอบ y จะถาม Portal URL
   เพิ่มอีกช่อง เก็บไว้ใน `arcgis-connection.xml` เหมือน URL/username/password เดิม (ไฟล์เก่าที่ไม่มี
   `AuthMode`/`PortalUrl` อ่านกลับมาเป็น `Server` โดยอัตโนมัติ) — **ทดสอบกับไซต์ Portal+Server ที่
-  federate กันจริงแล้วครั้งหนึ่ง (โดยผู้ใช้เอง สภาพแวดล้อมนี้ยังไม่มีไซต์แบบนั้นให้ทดสอบตรง ๆ)** พบสอง
-  รอบ:
+  federate กันจริงแล้วครบทั้ง 5 หัวข้อ ArcGIS (โดยผู้ใช้เอง สภาพแวดล้อมนี้ยังไม่มีไซต์แบบนั้นให้ทดสอบตรง ๆ
+  เอง) ผ่านทั้งหมดหลังแก้สามรอบ:
 
   รอบแรก "Test saved connection" ขึ้น `Connection OK` แม้ตั้งรหัสผ่านผิดไว้ในไฟล์เชื่อมต่อ แก้เบื้องต้น
   โดยเพิ่มการตรวจสอบ token ที่ได้จาก Portal ผ่าน `<portal>/sharing/rest/community/self` ทันทีหลัง
@@ -812,8 +820,35 @@ mock เดิมที่ `scratchpad\mock-arcgis-usage.ps1` **เขียน 
   (ทุก path ไม่ใช่แค่ Portal mode — server-tier token ไม่ตรวจ Referer อยู่แล้วจึงไม่กระทบ) โหมด `Server`
   ไม่แตะต้อง ยังใช้ `client=requestip` เดิมที่ยืนยันว่าใช้ได้จริงแล้ว ทดสอบด้วย mock server ยืนยันว่า
   body ของ `generateToken` มี `client=referer&referer=...` ถูกต้อง และคำขอถัดไป (`community/self`,
-  `/admin/info`) มี header `Referer` ตรงกันจริง — **ยังไม่ได้ให้ผู้ใช้ยืนยันกับไซต์จริงว่าแก้ปัญหา
-  "Invalid token" ได้จริงหรือไม่ ถ้ายังไม่ได้ ขั้นต่อไปคือทำ OAuth flow จริงตามที่สงสัยไว้ในรอบนี้**
+  `/admin/info`) มี header `Referer` ตรงกันจริง — **ยืนยันกับไซต์จริงแล้วว่าแก้ "Invalid token" ได้จริง
+  ครบทั้ง AGS/AGSSVC/AGSUSAGE/AGSDATA ขึ้น OK และ AGSLOG ขึ้น WARNING จริงจาก log ของไซต์เอง (ไม่ใช่
+  error จากการเชื่อมต่อ) ไม่ต้องทำ OAuth flow ตามที่สงสัยไว้ในรอบนี้**
+
+  รอบสี่: `AGSDATA` ยังเจออีกชั้น - `data/validateDataItem` (ที่ใช้กับรายการทั่วไป) validate item ของ
+  ArcGIS Data Store เอง (`nosql`/`objectStore`) ไม่ได้เลย เป็น NullPointerException จากโค้ด Java ของ
+  Esri เอง (`DataItem.getProvider()` เป็น null) ทุกครั้ง - ไม่ใช่ปัญหาการเชื่อมต่อ เป็นช่องโหว่ของ
+  `validateDataItem` เองที่ไม่รองรับ item ประเภทที่ตัวเองจัดการอยู่แล้ว ผู้ใช้ชี้ endpoint ที่ถูกต้องมาให้
+  (`data/items/<path>/machines/<machineName>/validate`, ชื่อเครื่องอ่านได้จาก
+  `item.info.machines[].name` ที่มีอยู่แล้วใน `findItems` ไม่ต้องเดา) ทดสอบแล้วพบว่า `objectStore` ใช้
+  operation นี้ได้จริงและให้ผลตรงกับความเป็นจริง (`Healthy`) ส่วน `nosql` มีพฤติกรรมไม่คงที่ระหว่าง
+  sub-type บนไซต์เดียวกัน - ตัวที่ใช้ Apache Ignite (`cacheStore`) ตอบ CRIT จริง (feature ยังไม่ได้ติดตั้ง)
+  ส่วนตัวที่ใช้ RabbitMQ (`queueStore`) ตอบ "Could not find resource or operation" (ไม่มี operation นี้
+  เลย) — ตามคำขอของผู้ใช้ ตัด `nosql` ออกจากการตรวจสอบทั้งหมด (ทั้งสอง sub-type แสดงเป็น "ข้ามการ
+  ตรวจสอบ" เหมือนกัน) เหลือ `egdb`/`objectStore` ที่ validate จริง ทดสอบซ้ำกับไซต์จริงจนครบ AGSDATA ขึ้น
+  OK เมื่อทุกอย่างจริง ๆ เชื่อมต่อได้
+
+### ยังไม่ได้ยืนยัน
+
+- **self-signed certificate** — ไซต์ที่ทดสอบใช้ใบรับรองจริง `Disable-PMArcGISCertificateCheck`
+  จึงยังไม่เคยถูกใช้งานจริง
+- **Portal-tier authentication กับไซต์ที่สอง** — ไซต์แรกยืนยันครบแล้ว (ดูหัวข้อ "ยืนยันแล้วกับไซต์จริง"
+  ด้านบน) แต่เพิ่งทดสอบมาไซต์เดียว ยังไม่รู้ว่าข้อสรุปสำคัญสองข้อเป็นเรื่องเฉพาะไซต์นี้หรือรูปแบบทั่วไปของ
+  Portal+Server ที่ federate กัน: (1) ต้องใช้ `client=referer` แทน `client=requestip` เสมอหรือเป็นเพราะ
+  ไซต์นี้ตั้ง Portal/Server หลัง reverse proxy คนละตัวโดยเฉพาะ - ถ้าไซต์อื่นไม่ได้ตั้งแบบนี้ `client=
+  requestip` อาจใช้ได้ปกติเช่นกัน (โค้ดยังส่ง `client=referer` ให้ทุกโหมด Portal อยู่ดี ซึ่งควรจะยังใช้ได้
+  แม้ไม่จำเป็น) (2) ArcGIS Data Store สร้าง item ประเภท `nosql`/`objectStore` เสมอด้วยชื่อขึ้นต้น
+  `AGSDataStore_` เหมือนกันหรือไม่ ยืนยันแค่ไซต์เดียว - ผู้ใช้กำลังจะทดสอบกับไซต์อื่นต่อ อัปเดตหัวข้อนี้
+  เมื่อรู้ผล
 - **ไซต์ที่มีมากกว่า 2 เครื่อง** — ตอนนี้เรียก status ทีละเครื่อง (1 + N ครั้ง) ไซต์ใหญ่ควรวัดเวลาก่อน
 - **ไซต์ที่ไม่มีรายงานถาวรเลย (`temp = false` ไม่มี)** — โค้ด `AGSUSAGE` ลดระดับเป็น `INFO` ตามที่
   ออกแบบไว้ แต่ยังไม่เคยเจอไซต์จริงที่อยู่ในสภาพนั้นเพื่อยืนยัน (ไซต์ทดสอบมี Manager ถูกเปิดใช้แล้ว)
