@@ -770,19 +770,36 @@ mock เดิมที่ `scratchpad\mock-arcgis-usage.ps1` **เขียน 
   `ArcGIS Server connection` -> `[1]` จะถามว่าไซต์ federate กับ Portal หรือไม่ ถ้าตอบ y จะถาม Portal URL
   เพิ่มอีกช่อง เก็บไว้ใน `arcgis-connection.xml` เหมือน URL/username/password เดิม (ไฟล์เก่าที่ไม่มี
   `AuthMode`/`PortalUrl` อ่านกลับมาเป็น `Server` โดยอัตโนมัติ) — **ทดสอบกับไซต์ Portal+Server ที่
-  federate กันจริงแล้วครั้งหนึ่ง (โดยผู้ใช้เอง สภาพแวดล้อมนี้ยังไม่มีไซต์แบบนั้นให้ทดสอบตรง ๆ)
-  พบว่า "Test saved connection" ขึ้น `Connection OK` แม้ตั้งรหัสผ่านผิดไว้ในไฟล์เชื่อมต่อ**
-  — สาเหตุที่แน่ชัดยังไม่ได้ยืนยัน (ตรวจ `Get-PMArcGISToken` ด้วย mock server จำลอง response ของ
-  Portal ทั้งแบบ HTTP 200+error body และ HTTP 400+error body สำหรับรหัสผ่านผิด ทั้งสองแบบ throw
-  ถูกต้อง) แต่โค้ดเดิมมีช่องโหว่จริงที่อาจอธิบายอาการนี้ได้: `generateToken` ตอบกลับด้วย token
-  เฉย ๆ โดยไม่มี `error` ในบอดี้ไม่ได้แปลว่ารหัสผ่านถูกเสมอไป, `/admin/info` ไม่ต้องใช้ token เลย,
-  และ `/admin/machines` (จุดเดียวที่ต้องใช้ token จริง) ถ้าล้มเหลวโค้ดเดิมจะถือว่ายัง "signed in"
-  แค่สิทธิ์ไม่พอ ไม่ใช่ signed in ไม่สำเร็จ — แก้แล้วโดยเพิ่มการตรวจสอบ token ที่ได้จาก Portal ผ่าน
-  `<portal>/sharing/rest/community/self` ทันทีหลัง `generateToken` (เฉพาะโหมด `Portal`) ถ้า endpoint
-  นี้ตอบ `error` หรือไม่มี `username` กลับมา ถือว่า sign-in ไม่สำเร็จและ throw ทันที ไม่ปล่อยให้ token
-  หลุดออกจากฟังก์ชันเลย ทดสอบด้วย mock server จำลองทั้งสองกรณี (Portal คืน token ปลอมสำหรับรหัสผ่านผิด
-  → ต้อง throw, และ sign-in จริงสำเร็จ → ต้องไม่ throw) ผ่านทั้งคู่ — **ยังไม่ได้ให้ผู้ใช้ยืนยันซ้ำกับไซต์
-  จริงที่เจอปัญหานี้ว่าแก้แล้วจริง**
+  federate กันจริงแล้วครั้งหนึ่ง (โดยผู้ใช้เอง สภาพแวดล้อมนี้ยังไม่มีไซต์แบบนั้นให้ทดสอบตรง ๆ)** พบสอง
+  รอบ:
+
+  รอบแรก "Test saved connection" ขึ้น `Connection OK` แม้ตั้งรหัสผ่านผิดไว้ในไฟล์เชื่อมต่อ แก้เบื้องต้น
+  โดยเพิ่มการตรวจสอบ token ที่ได้จาก Portal ผ่าน `<portal>/sharing/rest/community/self` ทันทีหลัง
+  `generateToken` (เฉพาะโหมด `Portal`) — ถ้า endpoint นี้ตอบ error หรือไม่มี username กลับมา ถือว่า
+  sign-in ไม่สำเร็จ
+
+  รอบสอง (หลังแก้รอบแรก) ผู้ใช้รันหัวข้อ AGS จริงแล้วส่ง `PM-Data.json`/`PM-Report.html` มาให้ดู เจอ
+  **สาเหตุตัวจริง**: `/admin/info`, `/admin/machines`, `data/findItems` และ `logs/query` บนไซต์นี้
+  ตอบกลับ `{"status":"error","messages":["...Invalid token."],"code":498}` เมื่อ token ที่ได้จาก Portal
+  ใช้กับ Admin API ของ Server ไม่ได้ (แม้ sign-in เข้า Portal เองสำเร็จจริงและผ่าน community/self แล้ว —
+  น่าจะเป็นเรื่องสิทธิ์ federation ฝั่ง Esri เอง ไม่ใช่รหัสผ่านผิด) แต่ `Invoke-PMArcGISAdmin` เดิมเช็ค
+  error เฉพาะ shape `{"error":{...}}` ที่ `generateToken` ใช้เท่านั้น ไม่รู้จัก shape `{"status":"error",
+  "messages":[...]}` นี้เลย ทำให้ทุกคำตอบข้างต้นถูกอ่านเป็นข้อมูลปกติที่ว่างเปล่า: `/admin/info` ไม่มี
+  currentversion, `/admin/machines` ว่างเปล่า, `findItems` ได้ item หลอกว่าง ๆ หนึ่งตัว (`@($null)` ใน
+  PowerShell คือ array หนึ่งตัว ไม่ใช่ array ว่าง — เป็นที่มาของ "AGSDATA เจอ 1 รายการแต่ path ว่างเปล่า"
+  ที่ผู้ใช้รายงานว่า "ไม่เจอ config ทั้งที่มีของบนระบบ") และ `logs/query` ได้ 0 ข้อความ — token ที่ถูก
+  server ปฏิเสธจึงดูเหมือนไซต์ปกติว่างเปล่าทุกจุด ไม่ใช่ error ที่ชัดเจน (`A4-ArcGISLog.ps1` เคยเจอปัญหา
+  shape นี้มาก่อนแล้วและแก้เฉพาะจุดไว้ในไฟล์ตัวเอง — ดูคอมเมนต์เดิมที่อ้างถึง — แต่ไม่เคยยกมาเป็นจุดกลาง)
+
+  แก้แล้วโดยย้ายการเช็คมาไว้กลางที่ `Invoke-PMArcGISAdmin`: เช็ค `status:"error"` เพิ่มจาก `error:{...}`
+  เดิม แล้ว throw ให้ทุก caller เหมือนกัน ยกเว้น `data/validateDataItem` ที่ `status:"error"` เป็นผลลัพธ์
+  ปกติ (แหล่งข้อมูลเชื่อมต่อไม่ได้จริง ๆ ไม่ใช่ token ผิด) — จุดนั้น opt out ด้วย `-AllowStatusError` ให้
+  โค้ดเดิมของ AGSDATA แปล status/messages เองต่อไปเหมือนเดิม ลบโค้ด workaround เฉพาะจุดใน
+  `A4-ArcGISLog.ps1` ออกเพราะกลายเป็นซ้ำซ้อนกับจุดกลางแล้ว ทดสอบด้วย mock server จำลอง response ทุก
+  รูปแบบที่เจอจริง (`info`/`machines` ต้อง throw, `data/validateOk`-style ที่ opt out ต้องไม่ throw) ผ่าน
+  หมด — **ยังไม่ได้ให้ผู้ใช้ยืนยันซ้ำกับไซต์จริงว่าตอนนี้ AGS/AGSSVC/AGSDATA/AGSLOG ขึ้น error ชัดเจนแทน
+  "OK ว่างเปล่า" แล้ว และปัญหาเดิม (ทำไม token ของ Portal ใช้กับ Admin API ของ Server ไม่ได้ — น่าจะต้อง
+  แก้สิทธิ์ federation ฝั่ง Portal/Server เอง ไม่ใช่ฝั่ง PMtools) ยังไม่มีทางแก้ที่ยืนยันแล้ว**
 - **ไซต์ที่มีมากกว่า 2 เครื่อง** — ตอนนี้เรียก status ทีละเครื่อง (1 + N ครั้ง) ไซต์ใหญ่ควรวัดเวลาก่อน
 - **ไซต์ที่ไม่มีรายงานถาวรเลย (`temp = false` ไม่มี)** — โค้ด `AGSUSAGE` ลดระดับเป็น `INFO` ตามที่
   ออกแบบไว้ แต่ยังไม่เคยเจอไซต์จริงที่อยู่ในสภาพนั้นเพื่อยืนยัน (ไซต์ทดสอบมี Manager ถูกเปิดใช้แล้ว)

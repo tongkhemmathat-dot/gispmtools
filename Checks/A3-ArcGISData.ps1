@@ -75,7 +75,8 @@ function Invoke-PMCheckArcGISData {
             $message = ''
             try {
                 $v = Invoke-PMArcGISAdmin -Root $session.Root -Path 'data/validateDataItem' -Token $session.Token `
-                                           -TimeoutSec $session.TimeoutSec -Method Post -Parameters @{ item = $itemJson }
+                                           -TimeoutSec $session.TimeoutSec -Method Post -Parameters @{ item = $itemJson } `
+                                           -AllowStatusError
                 if ([string]$v.status -eq 'success') {
                     $status = 'OK'
                 }

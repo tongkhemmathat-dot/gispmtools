@@ -429,7 +429,14 @@ function Invoke-PMArcGISAdmin {
         [Parameter(Mandatory)][string]$Token,
         [hashtable]$Parameters,
         [ValidateSet('Get', 'Post')][string]$Method = 'Get',
-        [int]$TimeoutSec = 60
+        [int]$TimeoutSec = 60,
+
+        # data/validateDataItem answers {"status":"error","messages":[...]}
+        # for a data store that genuinely cannot connect - a normal, expected
+        # result its caller (AGSDATA) wants to read and report itself, not a
+        # failed API call. Every other operation passes this switch, so the
+        # check below stays on by default.
+        [switch]$AllowStatusError
     )
 
     Initialize-PMArcGISTransport
@@ -463,6 +470,26 @@ function Invoke-PMArcGISAdmin {
     if ($resp -and $resp.PSObject.Properties['error']) {
         $msg = $resp.error.message
         if ($resp.error.details) { $msg = $msg + ' - ' + ($resp.error.details -join '; ') }
+        throw ("{0} returned an error: {1}" -f $Path, $msg)
+    }
+
+    # Most Admin API operations that fail answer {"status":"error",
+    # "messages":[...]} in an HTTP 200 body instead of the {"error":{...}}
+    # shape above - confirmed on a real federated site: /admin/info,
+    # /admin/machines, data/findItems and logs/query all rejected an
+    # unrecognised token this way. Left undetected, each one read as
+    # ordinary data to its caller instead of a failure: /admin/info with no
+    # currentversion, /admin/machines with an empty list, findItems with one
+    # bogus null item (@($null) is a one-element array in PowerShell, not an
+    # empty one), logs/query with zero messages - a rejected token looked
+    # exactly like a healthy, empty site everywhere rather than a clear
+    # error. Checked explicitly here so every caller gets the same failure
+    # instead of each having to notice and work around it independently -
+    # see A4-ArcGISLog.ps1's history for the one place this was already
+    # worked around locally before this generic check existed.
+    if (-not $AllowStatusError -and $resp -and $resp.PSObject.Properties['status'] -and [string]$resp.status -eq 'error') {
+        $msg = 'unknown error'
+        if ($resp.PSObject.Properties['messages'] -and $resp.messages) { $msg = (@($resp.messages) -join '; ') }
         throw ("{0} returned an error: {1}" -f $Path, $msg)
     }
 

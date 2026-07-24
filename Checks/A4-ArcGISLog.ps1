@@ -69,27 +69,22 @@ function Invoke-PMCheckArcGISLog {
         $counts     = @{ SEVERE = 0; WARNING = 0 }
 
         foreach ($level in @('SEVERE', 'WARNING')) {
+            # logs/query reports its own failures as {"status":"error",
+            # "messages":[...]} in an HTTP 200 body rather than the
+            # {"error":{...}} shape generateToken uses - confirmed against a
+            # real site (the very first request here, sent without the
+            # required "filter" parameter, came back this way). Without a
+            # check for that shape, a permissions error here would come back
+            # as $resp.logMessages = $null, which the code below would
+            # silently read as "zero problems found" - a false OK on a query
+            # that never actually ran. Invoke-PMArcGISAdmin now throws on
+            # that shape for every caller, so the catch below is enough.
             $resp    = $null
             $errText = ''
             try {
                 $resp = Get-PMArcGISLogLevel -Level $level
             }
             catch { $errText = $_.Exception.Message }
-
-            # logs/query reports its own failures as {"status":"error",
-            # "messages":[...]} in an HTTP 200 body - confirmed against a
-            # real site (the very first request here, sent without the
-            # required "filter" parameter, came back this way). It does
-            # NOT use the {"error":{...}} shape Invoke-PMArcGISAdmin's
-            # generic handling throws on, so that check alone is not
-            # enough: a permissions error here would otherwise come back
-            # as $resp.logMessages = $null, which the code below would
-            # silently read as "zero problems found" - a false OK on a
-            # query that never actually ran. Checked explicitly instead.
-            if ([string]::IsNullOrWhiteSpace($errText) -and $resp -and $resp.PSObject.Properties['status'] -and [string]$resp.status -eq 'error') {
-                $errText = if ($resp.messages) { @($resp.messages) -join '; ' } else { 'unknown error' }
-                $resp = $null
-            }
 
             if ([string]::IsNullOrWhiteSpace($errText) -and $null -eq $resp) { $errText = 'no response' }
 
