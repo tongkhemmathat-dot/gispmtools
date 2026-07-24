@@ -1,6 +1,6 @@
-﻿# บันทึกส่งงาน PMtools — ทำต่อหลังวันที่ 23 กรกฎาคม 2569
+﻿# บันทึกส่งงาน PMtools — ทำต่อหลังวันที่ 24 กรกฎาคม 2569
 
-สรุป ณ วันที่ 23 กรกฎาคม 2569 (อัปเดตหลังออก v1.7.4) สำหรับใช้ทำงานต่อ
+สรุป ณ วันที่ 24 กรกฎาคม 2569 (อัปเดตหลังออก v1.7.5) สำหรับใช้ทำงานต่อ
 
 ไฟล์นี้เก็บ **สถานะงานและสิ่งที่ค้าง** ส่วนวิธีใช้งานอยู่ใน [README.md](../README.md)
 และเอกสารที่ README.md ชี้ไปต่อ (ทั้งหมดอยู่ในโฟลเดอร์นี้ `docs/`: USAGE.md, DISTRIBUTION.md,
@@ -14,12 +14,14 @@ CHECKS.md, TECHNICAL.md)
 
 เครื่องมืออยู่ที่ `D:\PMtools` ขึ้น GitHub แล้วที่
 [tongkhemmathat-dot/gispmtools](https://github.com/tongkhemmathat-dot/gispmtools) (private)
-**push ครบทุก commit แล้ว ไม่มีอะไรค้างใน working tree — รุ่นล่าสุดที่ออกคือ v1.7.4**
+**ยังไม่ได้ push commit ล่าสุดขึ้น GitHub (Portal-federated auth, `Build-PM.cmd`, และ bump v1.7.5
+นี้) — สั่ง `git push` เมื่อพร้อม ไม่มีอะไรค้างใน working tree — รุ่นล่าสุดที่ทำในเครื่องคือ v1.7.5**
 
 มี **21 หัวข้อตรวจ** โดย 14 หัวข้อรันเป็นค่าเริ่มต้น ใช้เวลาราว 6.5 วินาที
 อีก 7 หัวข้อปิดไว้ (`WU`, `CONN`, `AGS`, `AGSSVC`, `AGSUSAGE`, `AGSDATA`, `AGSLOG`)
 
-**นับจากรุ่น v1.2.0 ถึง v1.7.4 (ทั้งหมดวันที่ 23 ก.ค. 2569 เดียวกัน)** เพิ่มเข้ามาตามลำดับ:
+**นับจากรุ่น v1.2.0 ถึง v1.7.4 (ทั้งหมดวันที่ 23 ก.ค. 2569 เดียวกัน) แล้วจึง v1.7.5 (24 ก.ค. 2569)**
+เพิ่มเข้ามาตามลำดับ:
 ครบ 5 หัวข้อ ArcGIS (`AGS`/`AGSSVC`/`AGSUSAGE`/`AGSDATA`/`AGSLOG`), พารามิเตอร์
 `-Group Server|ArcGIS` แยกสองกลุ่มไม่ให้รันปนกัน, กราฟจำนวนคำขอรายช่วงเวลาใน `AGSUSAGE`
 (ภาพรวมทั้งไซต์ ใช้ข้อมูลที่มีอยู่แล้ว ไม่ต้องรอเก็บสะสม), เส้นกริดกราฟปรับให้เป็นจำนวนเต็มที่
@@ -27,9 +29,15 @@ CHECKS.md, TECHNICAL.md)
 ฮาร์ดแวร์/OS ต่อเครื่องใน `AGS` จาก `/admin/about` (v1.7.0) แยกรายละเอียดนั้นเป็น
 สามบรรทัดย่อย OS/CPU/RAM ต่อเครื่องแทนข้อความรวมเส้นเดียว (v1.7.1) ย้ายเอกสารรองทั้งหมดเข้า
 โฟลเดอร์ `docs/` เพื่อให้ root ของ repo อ่านง่ายขึ้นสำหรับผู้ที่เพิ่งเข้ามาดูใน GitHub (v1.7.2)
-แก้ไฟล์นี้เองต่อ (v1.7.3) และล่าสุดเพิ่มตัวอย่างคำสั่งไฟล์เดียวแบบรอบเดียวจบลงใน `README.md`
-โดยตรง แทนที่จะให้ผู้ใช้ต้องคลิกไปดู `DISTRIBUTION.md` ก่อน (v1.7.4) — ไม่มีการเปลี่ยนพฤติกรรม
-ของโค้ดเลยทั้งสามรุ่นหลังนี้
+แก้ไฟล์นี้เองต่อ (v1.7.3) เพิ่มตัวอย่างคำสั่งไฟล์เดียวแบบรอบเดียวจบลงใน `README.md` โดยตรง
+แทนที่จะให้ผู้ใช้ต้องคลิกไปดู `DISTRIBUTION.md` ก่อน (v1.7.4) — สี่รุ่นนี้ไม่มีการเปลี่ยนพฤติกรรมของ
+โค้ดเลย และล่าสุดเพิ่มการล็อกอินผ่าน Portal for ArcGIS สำหรับไซต์ที่ federate กับ Portal
+(`AuthMode`/`PortalUrl` ใน `Get-PMArcGISToken`/`Save-PMArcGISConnection` ขอ token จาก
+`<portal>/sharing/rest/generateToken` แทน `<site>/admin/generateToken` เมื่อเลือกโหมดนี้ตอนตั้งค่า
+การเชื่อมต่อ — ค่าเริ่มต้นยังเป็นโหมด Server เดิม ไฟล์เชื่อมต่อเก่าอ่านกลับมาเป็น Server อัตโนมัติ ไม่ต้อง
+ตั้งค่าใหม่) พร้อม `Build-PM.cmd` ตัว launcher ใหม่สำหรับ `Build-PMSingle.ps1` (ไม่ต้องพิมพ์
+`powershell -ExecutionPolicy Bypass` เอง) เป็น v1.7.5 — การล็อกอินผ่าน Portal ยังไม่เคยทดสอบกับไซต์
+Portal+Server ที่ federate กันจริง เพราะสภาพแวดล้อมนี้ไม่มีไซต์แบบนั้นให้ทดสอบ
 — รายละเอียดแต่ละอย่างอยู่ในหัวข้อย่อยด้านล่างตามลำดับเวลาที่ทำจริง
 
 ```powershell
@@ -412,7 +420,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File 'D:\PMtools\Show-PMMenu.ps1'
 ซึ่งทำให้ทดสอบอัตโนมัติไม่ได้ ให้เรียกท่อน PowerShell ตรง ๆ แบบเดียวกับที่ label `:elevated` ทำ
 
 ```powershell
-$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.7.4.cmd'
+$env:PM_SELF = 'D:\PMtools\Dist\PMtools-1.7.5.cmd'
 $boot = '$t=[IO.File]::ReadAllText($env:PM_SELF); $m=''#PM''+''TOOLS_PAYLOAD#''; & ([scriptblock]::Create($t.Substring($t.IndexOf($m))))'
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$boot -Only DISK"
 ```
