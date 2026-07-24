@@ -797,9 +797,23 @@ mock เดิมที่ `scratchpad\mock-arcgis-usage.ps1` **เขียน 
   โค้ดเดิมของ AGSDATA แปล status/messages เองต่อไปเหมือนเดิม ลบโค้ด workaround เฉพาะจุดใน
   `A4-ArcGISLog.ps1` ออกเพราะกลายเป็นซ้ำซ้อนกับจุดกลางแล้ว ทดสอบด้วย mock server จำลอง response ทุก
   รูปแบบที่เจอจริง (`info`/`machines` ต้อง throw, `data/validateOk`-style ที่ opt out ต้องไม่ throw) ผ่าน
-  หมด — **ยังไม่ได้ให้ผู้ใช้ยืนยันซ้ำกับไซต์จริงว่าตอนนี้ AGS/AGSSVC/AGSDATA/AGSLOG ขึ้น error ชัดเจนแทน
-  "OK ว่างเปล่า" แล้ว และปัญหาเดิม (ทำไม token ของ Portal ใช้กับ Admin API ของ Server ไม่ได้ — น่าจะต้อง
-  แก้สิทธิ์ federation ฝั่ง Portal/Server เอง ไม่ใช่ฝั่ง PMtools) ยังไม่มีทางแก้ที่ยืนยันแล้ว**
+  หมด — ยืนยันแล้วว่า AGS/AGSSVC/AGSDATA/AGSLOG ขึ้น error ชัดเจนแทน "OK ว่างเปล่า"
+
+  รอบสาม: ผู้ใช้สังเกตว่าหน้า `/admin` ของ ArcGIS Server เองมีสองแท็บล็อกอิน — `siteadmin` (server-tier)
+  กับ `Portal OAuth` — ทำให้สงสัยว่า "Invalid token" อาจเป็นเพราะ Admin API ต้องการ token ที่ได้จาก OAuth
+  flow จริง ๆ ไม่รับ token ธรรมดาจาก `generateToken` เลย แต่ก่อนจะลงมือทำ OAuth (ต้องเปิด browser ให้
+  ผู้ใช้ล็อกอิน ต่างจากรูปแบบ username/password ผ่าน console เดิมทั้งหมด) เลือกลองสมมติฐานที่ถูกกว่าก่อน:
+  token จาก `generateToken` เดิมใช้ `client=requestip` ซึ่งผูก token ไว้กับ IP ของเครื่องที่เรียก — ถ้า
+  Portal กับ Server ที่ federate อยู่หลัง reverse proxy/load balancer คนละตัว (พบบ่อยในการติดตั้งจริง)
+  IP ที่ Server เห็นตอนรับคำขออาจไม่ตรงกับที่ Portal เห็นตอนออก token ทำให้ token ตกเป็น "Invalid token"
+  ทั้งที่ sign-in ถูกต้องทุกอย่าง — แก้โดยเปลี่ยนเฉพาะโหมด `Portal` ให้ใช้ `client=referer` กับค่า
+  `referer` คงที่ (`$Script:PMArcGISReferer = 'https://pmtools.local'`) แทน ซึ่งผูก token กับสตริงคงที่
+  แทนเส้นทางเครือข่าย แล้วส่ง header `Referer` ค่าเดียวกันนี้กลับไปทุกคำขอถัดไปใน `Invoke-PMArcGISAdmin`
+  (ทุก path ไม่ใช่แค่ Portal mode — server-tier token ไม่ตรวจ Referer อยู่แล้วจึงไม่กระทบ) โหมด `Server`
+  ไม่แตะต้อง ยังใช้ `client=requestip` เดิมที่ยืนยันว่าใช้ได้จริงแล้ว ทดสอบด้วย mock server ยืนยันว่า
+  body ของ `generateToken` มี `client=referer&referer=...` ถูกต้อง และคำขอถัดไป (`community/self`,
+  `/admin/info`) มี header `Referer` ตรงกันจริง — **ยังไม่ได้ให้ผู้ใช้ยืนยันกับไซต์จริงว่าแก้ปัญหา
+  "Invalid token" ได้จริงหรือไม่ ถ้ายังไม่ได้ ขั้นต่อไปคือทำ OAuth flow จริงตามที่สงสัยไว้ในรอบนี้**
 - **ไซต์ที่มีมากกว่า 2 เครื่อง** — ตอนนี้เรียก status ทีละเครื่อง (1 + N ครั้ง) ไซต์ใหญ่ควรวัดเวลาก่อน
 - **ไซต์ที่ไม่มีรายงานถาวรเลย (`temp = false` ไม่มี)** — โค้ด `AGSUSAGE` ลดระดับเป็น `INFO` ตามที่
   ออกแบบไว้ แต่ยังไม่เคยเจอไซต์จริงที่อยู่ในสภาพนั้นเพื่อยืนยัน (ไซต์ทดสอบมี Manager ถูกเปิดใช้แล้ว)

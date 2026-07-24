@@ -288,6 +288,18 @@ $Script:PMArcGISToken       = $null
 $Script:PMArcGISTokenExpiry = [datetime]::MinValue
 $Script:PMArcGISTokenKey    = ''
 
+# Portal-issued tokens use client=referer instead of client=requestip (see
+# Get-PMArcGISToken): Portal and the Server it federates with often sit
+# behind separate reverse proxies/load balancers, so the IP Portal sees
+# when it issues the token can differ from the IP the Server sees when
+# that same token is later presented to it - client=requestip then rejects
+# a perfectly good token as "Invalid token." because the two never match.
+# client=referer sidesteps that by binding the token to this fixed string
+# instead of a network path, as long as the exact same string rides along
+# as the HTTP Referer header on every later request - Invoke-PMArcGISAdmin
+# always sends it, harmless for server-tier tokens which do not check it.
+$Script:PMArcGISReferer = 'https://pmtools.local'
+
 function Clear-PMArcGISToken {
     $Script:PMArcGISToken       = $null
     $Script:PMArcGISTokenExpiry = [datetime]::MinValue
@@ -343,14 +355,23 @@ function Get-PMArcGISToken {
 
     $plain = ConvertFrom-PMSecureString -Secure $Password
 
-    # client=requestip ties the token to the calling address, so a token
-    # captured off the wire is useless from anywhere else.
     $body = @{
         username   = $Username
         password   = $plain
-        client     = 'requestip'
         expiration = $ExpirationMinutes
         f          = 'json'
+    }
+    if ($AuthMode -eq 'Portal') {
+        # See $Script:PMArcGISReferer above - requestip does not survive
+        # Portal and its federated Server sitting behind separate proxies.
+        $body['client']  = 'referer'
+        $body['referer'] = $Script:PMArcGISReferer
+    }
+    else {
+        # client=requestip ties the token to the calling address, so a
+        # token captured off the wire is useless from anywhere else.
+        # Confirmed working for server-tier sign-in - left as is.
+        $body['client'] = 'requestip'
     }
 
     try {
@@ -393,7 +414,8 @@ function Get-PMArcGISToken {
     if ($AuthMode -eq 'Portal') {
         $selfUrl = (Get-PMArcGISPortalRoot -Url $PortalUrl) + '/sharing/rest/community/self'
         try {
-            $self = Invoke-RestMethod -Uri $selfUrl -Method Get -Body @{ f = 'json'; token = $newToken } -TimeoutSec $TimeoutSec -ErrorAction Stop
+            $self = Invoke-RestMethod -Uri $selfUrl -Method Get -Body @{ f = 'json'; token = $newToken } `
+                                      -Headers @{ Referer = $Script:PMArcGISReferer } -TimeoutSec $TimeoutSec -ErrorAction Stop
         }
         catch {
             throw ("Portal for ArcGIS issued a token but it could not be verified: {0}" -f $_.Exception.Message)
@@ -452,15 +474,20 @@ function Invoke-PMArcGISAdmin {
 
     $url = Get-PMArcGISAdminUrl -Root $Root -Path $Path
 
+    # Sent on every call, not only for a Portal-mode token: a server-tier
+    # (requestip-bound) token simply ignores an extra header it never
+    # checks, so there is no separate code path to keep in sync here.
+    $headers = @{ Referer = $Script:PMArcGISReferer }
+
     try {
         if ($Method -eq 'Post') {
-            $resp = Invoke-RestMethod -Uri $url -Method Post -Body $reqArgs -TimeoutSec $TimeoutSec -ErrorAction Stop
+            $resp = Invoke-RestMethod -Uri $url -Method Post -Body $reqArgs -Headers $headers -TimeoutSec $TimeoutSec -ErrorAction Stop
         }
         else {
             $query = ($reqArgs.GetEnumerator() | ForEach-Object {
                 '{0}={1}' -f [Uri]::EscapeDataString([string]$_.Key), [Uri]::EscapeDataString([string]$_.Value)
             }) -join '&'
-            $resp = Invoke-RestMethod -Uri ($url + '?' + $query) -Method Get -TimeoutSec $TimeoutSec -ErrorAction Stop
+            $resp = Invoke-RestMethod -Uri ($url + '?' + $query) -Method Get -Headers $headers -TimeoutSec $TimeoutSec -ErrorAction Stop
         }
     }
     catch {
