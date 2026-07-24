@@ -49,10 +49,23 @@
 # against the same real site (2026-07-24), including for the exact
 # objectStore item validateDataItem NPEs on. machineName is not guessed: it
 # comes straight from that item's own info.machines[].name, already in
-# memory from findItems. If an item of one of these types ever has no
-# machines listed (unseen so far, but not provable impossible), there is
-# nothing to call this operation against, so it falls back to a plain
-# "validation skipped" row instead of guessing. "egdb" (the actual database
+# memory from findItems.
+#
+# "nosql" is skipped outright rather than run through that same operation.
+# Confirmed on the same real site that "nosql" covers two very different
+# sub-types with two very different results: an Apache Ignite-backed
+# in-memory cache item answered a real, correct CRIT (the cache feature
+# genuinely was not installed on that machine), while a RabbitMQ-backed
+# queue item answered the site's standard "no such resource" text because
+# the operation is not exposed for that sub-type at all. Telling those
+# apart reliably from outside would mean matching on implementation details
+# (Ignite vs RabbitMQ, "cacheStore" vs "queueStore") that are not
+# guaranteed stable across ArcGIS Data Store versions, so by request "nosql"
+# items are reported as skipped instead of risking either a false CRIT on
+# a queue-type item elsewhere, or silently trusting a health result this
+# check cannot tell apart from "operation not found" reliably enough.
+# "objectStore" did not show this ambiguity (Ozone-backed, single behavior
+# observed) and keeps validating for real. "egdb" (the actual database
 # hosted feature layers query) uses validateDataItem as normal and is the
 # type that matters for this check regardless of whether it also carries
 # an "AGSDataStore_" name.
@@ -86,17 +99,32 @@ function Invoke-PMCheckArcGISData {
             (New-PMColumn -Key 'Status' -TextKey 'agsdata.col.status')
         )
 
-        $rows              = @()
-        $findings          = @()
-        $failed            = 0
-        $skipped           = 0
-        $unsupportedTypes  = @('nosql', 'objectStore')
+        $rows            = @()
+        $findings        = @()
+        $failed          = 0
+        $skipped         = 0
+        $skipTypes       = @('nosql')
+        $dataStoreTypes  = @('objectStore')
 
         foreach ($item in $items) {
             $path = [string]$item.path
             $type = [string]$item.type
 
-            if ($unsupportedTypes -contains $type) {
+            if ($skipTypes -contains $type) {
+                $skipped++
+                $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsdata.finding.skipped' -Values @($path, $type)
+                $word = Get-PMWord -Key 'agsdata.state.skipped'
+                $rows += @{
+                    Path       = $path
+                    Type       = $type
+                    Status     = $word.Th
+                    StatusEn   = $word.En
+                    _RowStatus = 'INFO'
+                }
+                continue
+            }
+
+            if ($dataStoreTypes -contains $type) {
                 $machineNames = @($item.info.machines | ForEach-Object { [string]$_.name } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
                 if ($machineNames.Count -eq 0) {
