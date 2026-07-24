@@ -28,6 +28,20 @@
 # validateDataItem request body for that same item, and is never placed in
 # $rows, $findings, or -Raw - only Path, Type and the pass/fail outcome
 # are. Grep PM-Data.json after changing this file if in doubt.
+#
+# validateDataItem cannot be called for every type findItems can return.
+# Confirmed against a real ArcGIS Data Store-backed hosting server (2026-07-
+# 24): "nosql" and "objectStore" items - both internal to ArcGIS Data Store
+# itself (replication log, tile cache, object store; named "AGSDataStore_*"
+# by the server, not by an administrator) - always answer with a raw Java
+# NullPointerException from the site's own admin/dataspace code
+# (DataItem.getProvider() returning null), never a real success/failure
+# verdict. That is a site-side gap in validateDataItem's support for its
+# own managed item types, not a connection problem, so these two types are
+# skipped rather than reported as CRIT on every run. "egdb" (the actual
+# database hosted feature layers query) validates normally and is the type
+# that matters for this check regardless of whether it also carries an
+# "AGSDataStore_" name.
 
 function Invoke-PMCheckArcGISData {
 
@@ -58,13 +72,29 @@ function Invoke-PMCheckArcGISData {
             (New-PMColumn -Key 'Status' -TextKey 'agsdata.col.status')
         )
 
-        $rows      = @()
-        $findings  = @()
-        $failed    = 0
+        $rows              = @()
+        $findings          = @()
+        $failed            = 0
+        $skipped           = 0
+        $unsupportedTypes  = @('nosql', 'objectStore')
 
         foreach ($item in $items) {
             $path = [string]$item.path
             $type = [string]$item.type
+
+            if ($unsupportedTypes -contains $type) {
+                $skipped++
+                $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsdata.finding.skipped' -Values @($path, $type)
+                $word = Get-PMWord -Key 'agsdata.state.skipped'
+                $rows += @{
+                    Path       = $path
+                    Type       = $type
+                    Status     = $word.Th
+                    StatusEn   = $word.En
+                    _RowStatus = 'INFO'
+                }
+                continue
+            }
 
             # Only Path, Type and Info travel into the validate request body -
             # Info never leaves this loop iteration.
@@ -125,6 +155,7 @@ function Invoke-PMCheckArcGISData {
             -Raw ([pscustomobject]@{
                 Total   = $items.Count
                 Failed  = $failed
+                Skipped = $skipped
                 Items   = @($rows | ForEach-Object { [pscustomobject]@{ Path = $_.Path; Type = $_.Type; Status = $_._RowStatus } })
             })
     }
