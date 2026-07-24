@@ -30,6 +30,13 @@
 # machine name(s) it already lists at info.machines[].name so their own
 # health-check operation can be called) and is never placed in $rows,
 # $findings, or -Raw - only Path, Type and the pass/fail outcome are.
+#
+# validateDataItem's own RESPONSE can carry the same class of secret right
+# back: confirmed on a real site, the per-machine breakdown shape's
+# dataItems[].path holds the item's full connection string, ENCRYPTED_
+# PASSWORD blob included - see the note further down where that shape is
+# handled. Only dataItems[].message is ever read from it.
+#
 # Grep PM-Data.json after changing this file if in doubt.
 #
 # validateDataItem cannot be called for every type findItems can return.
@@ -211,10 +218,38 @@ function Invoke-PMCheckArcGISData {
                 if ([string]$v.status -eq 'success') {
                     $status = 'OK'
                 }
-                else {
-                    if ($v.PSObject.Properties['message'])       { $message = [string]$v.message }
-                    elseif ($v.PSObject.Properties['messages'])  { $message = (@($v.messages) -join '; ') }
-                    elseif ($v.PSObject.Properties['error'])     { $message = [string]$v.error.message }
+                elseif ($v.PSObject.Properties['message'])      { $message = [string]$v.message }
+                elseif ($v.PSObject.Properties['messages'])     { $message = (@($v.messages) -join '; ') }
+                elseif ($v.PSObject.Properties['error'])        { $message = [string]$v.error.message }
+                elseif ($v.PSObject.Properties['machines']) {
+                    # A third response shape, confirmed on a real multi-machine
+                    # site (2026-07-24) for both "rasterStore" and "egdb": no
+                    # top-level status/message at all - instead a per-machine
+                    # breakdown, {"machines":[{"machine":"...","status":"error",
+                    # "dataItems":[{"message":"...",...}]}]}. Reaching this
+                    # branch already means the top-level "success" check above
+                    # was false, so treat it as OK only if every machine here
+                    # explicitly says otherwise (status other than "error");
+                    # extract .message from each failing machine's dataItems for
+                    # a real, specific reason instead of the generic fallback
+                    # below. dataItems[].path is deliberately never read here -
+                    # confirmed on the same site to carry the item's full
+                    # connection string, ENCRYPTED_PASSWORD blob included, same
+                    # class of secret the SECURITY note above already excludes.
+                    $machines       = @($v.machines)
+                    $failedMachines = @($machines | Where-Object { [string]$_.status -eq 'error' })
+                    if ($machines.Count -gt 0 -and $failedMachines.Count -eq 0) {
+                        $status = 'OK'
+                    }
+                    else {
+                        $parts = @()
+                        foreach ($m in $failedMachines) {
+                            foreach ($di in @($m.dataItems)) {
+                                if ($di.message) { $parts += ('{0}: {1}' -f [string]$m.machine, [string]$di.message) }
+                            }
+                        }
+                        if ($parts.Count -gt 0) { $message = ($parts -join '; ') }
+                    }
                 }
             }
             catch { $message = $_.Exception.Message }
