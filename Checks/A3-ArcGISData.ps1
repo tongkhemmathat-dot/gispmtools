@@ -21,27 +21,41 @@
 # detail instead: each call answers "success" or "error" for exactly one
 # connection.
 #
-# SECURITY: findItems returns each item's "info" block, which for an
-# enterprise geodatabase includes a "connectionString" carrying the
-# database server, database name, account name and an ArcGIS-encrypted
-# password blob. That whole block is used ONLY in memory to build the
-# validateDataItem request body for that same item, and is never placed in
-# $rows, $findings, or -Raw - only Path, Type and the pass/fail outcome
-# are. Grep PM-Data.json after changing this file if in doubt.
+# SECURITY: findItems returns each item's "info" block, which carries
+# secrets - a "connectionString" with an ArcGIS-encrypted password blob for
+# an enterprise geodatabase, "accessKey"/"secretKey" for an objectStore,
+# a "users[].password" list for a nosql store. That whole block is used
+# ONLY in memory to build a request for that same item (the
+# validateDataItem body below, or - for nosql/objectStore - to read the
+# machine name(s) it already lists at info.machines[].name so their own
+# health-check operation can be called) and is never placed in $rows,
+# $findings, or -Raw - only Path, Type and the pass/fail outcome are.
+# Grep PM-Data.json after changing this file if in doubt.
 #
 # validateDataItem cannot be called for every type findItems can return.
 # Confirmed against a real ArcGIS Data Store-backed hosting server (2026-07-
 # 24): "nosql" and "objectStore" items - both internal to ArcGIS Data Store
 # itself (replication log, tile cache, object store; named "AGSDataStore_*"
-# by the server, not by an administrator) - always answer with a raw Java
-# NullPointerException from the site's own admin/dataspace code
-# (DataItem.getProvider() returning null), never a real success/failure
-# verdict. That is a site-side gap in validateDataItem's support for its
-# own managed item types, not a connection problem, so these two types are
-# skipped rather than reported as CRIT on every run. "egdb" (the actual
-# database hosted feature layers query) validates normally and is the type
-# that matters for this check regardless of whether it also carries an
-# "AGSDataStore_" name.
+# by the server, not by an administrator) - always answer validateDataItem
+# with a raw Java NullPointerException from the site's own admin/dataspace
+# code (DataItem.getProvider() returning null), never a real success/
+# failure verdict. That is a site-side gap in validateDataItem's support
+# for its own managed item types, not a connection problem.
+#
+# ArcGIS Data Store items have their OWN, different health-check operation
+# instead: POST data/items/<path>/machines/<machineName>/validate, which
+# answers {"status":"success","datastore.overallhealth":"Healthy",
+# "machines":[{"machine.overallhealth":"Healthy",...}],...} - confirmed
+# against the same real site (2026-07-24), including for the exact
+# objectStore item validateDataItem NPEs on. machineName is not guessed: it
+# comes straight from that item's own info.machines[].name, already in
+# memory from findItems. If an item of one of these types ever has no
+# machines listed (unseen so far, but not provable impossible), there is
+# nothing to call this operation against, so it falls back to a plain
+# "validation skipped" row instead of guessing. "egdb" (the actual database
+# hosted feature layers query) uses validateDataItem as normal and is the
+# type that matters for this check regardless of whether it also carries
+# an "AGSDataStore_" name.
 
 function Invoke-PMCheckArcGISData {
 
@@ -83,15 +97,74 @@ function Invoke-PMCheckArcGISData {
             $type = [string]$item.type
 
             if ($unsupportedTypes -contains $type) {
-                $skipped++
-                $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsdata.finding.skipped' -Values @($path, $type)
-                $word = Get-PMWord -Key 'agsdata.state.skipped'
-                $rows += @{
-                    Path       = $path
-                    Type       = $type
-                    Status     = $word.Th
-                    StatusEn   = $word.En
-                    _RowStatus = 'INFO'
+                $machineNames = @($item.info.machines | ForEach-Object { [string]$_.name } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+                if ($machineNames.Count -eq 0) {
+                    $skipped++
+                    $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsdata.finding.skipped' -Values @($path, $type)
+                    $word = Get-PMWord -Key 'agsdata.state.skipped'
+                    $rows += @{
+                        Path       = $path
+                        Type       = $type
+                        Status     = $word.Th
+                        StatusEn   = $word.En
+                        _RowStatus = 'INFO'
+                    }
+                    continue
+                }
+
+                $dsOk          = $true
+                $dsUnsupported = $false
+                $dsMessage     = ''
+                foreach ($machineName in $machineNames) {
+                    $opPath  = 'data/items' + $path + '/machines/' + $machineName + '/validate'
+                    $machOk  = $false
+                    $machMsg = ''
+                    try {
+                        $v = Invoke-PMArcGISAdmin -Root $session.Root -Path $opPath -Token $session.Token `
+                                                   -TimeoutSec $session.TimeoutSec -Method Post -AllowStatusError
+                        $health = ''
+                        if ($v.PSObject.Properties['datastore.overallhealth']) { $health = [string]$v.'datastore.overallhealth' }
+                        if ([string]$v.status -eq 'success' -and $health -eq 'Healthy') {
+                            $machOk = $true
+                        }
+                        elseif ($v.PSObject.Properties['messages'] -and $v.messages) { $machMsg = (@($v.messages) -join '; ') }
+                        elseif (-not [string]::IsNullOrWhiteSpace($health)) { $machMsg = "machine $machineName reported health: $health" }
+                        else { $machMsg = "machine $machineName - no health detail provided by the site" }
+                    }
+                    catch { $machMsg = $_.Exception.Message }
+
+                    if (-not $machOk) {
+                        $dsOk = $false
+                        # Some Data Store item sub-types (confirmed: a RabbitMQ-
+                        # backed "queue" nosql item) do not expose this
+                        # operation at all - the site answers with its standard
+                        # "no such resource" text (whether that arrives as a
+                        # thrown error or as a non-throwing {"status":"error"}
+                        # body -AllowStatusError let through) rather than a
+                        # real health result. That is the same class of gap as
+                        # validateDataItem's NPE above, not a real outage, so
+                        # it is skipped rather than reported as CRIT.
+                        if ($machMsg -like '*Could not find resource or operation*') { $dsUnsupported = $true }
+                        if ([string]::IsNullOrWhiteSpace($dsMessage)) { $dsMessage = $machMsg }
+                    }
+                }
+
+                if ($dsUnsupported) {
+                    $skipped++
+                    $findings += New-PMFinding -Severity 'INFO' -TextKey 'agsdata.finding.skipped' -Values @($path, $type)
+                    $word = Get-PMWord -Key 'agsdata.state.skipped'
+                    $rows += @{ Path = $path; Type = $type; Status = $word.Th; StatusEn = $word.En; _RowStatus = 'INFO' }
+                }
+                elseif ($dsOk) {
+                    $word = Get-PMWord -Key 'agsdata.state.ok'
+                    $rows += @{ Path = $path; Type = $type; Status = $word.Th; StatusEn = $word.En; _RowStatus = 'OK' }
+                }
+                else {
+                    $failed++
+                    $findings += New-PMFinding -Severity 'CRIT' -TextKey 'agsdata.finding.failed' -Values @($path, $dsMessage)
+                    $word = Get-PMWord -Key 'agsdata.state.failed'
+                    $rows += @{ Path = $path; Type = $type; Status = $word.Th; StatusEn = $word.En; _RowStatus = 'CRIT' }
                 }
                 continue
             }
