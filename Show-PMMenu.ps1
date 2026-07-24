@@ -110,6 +110,9 @@ function Show-PMArcGISStatus {
     }
     else {
         Write-Host $conn.Url -ForegroundColor Green
+        if ($conn.AuthMode -eq 'Portal') {
+            Write-Host ("    auth via Portal: {0}" -f $conn.PortalUrl) -ForegroundColor DarkGray
+        }
         Write-Host ("    user {0}, saved {1} by {2}" -f $conn.Username, $conn.SavedAt, $conn.SavedBy) -ForegroundColor DarkGray
     }
 }
@@ -139,6 +142,27 @@ function Read-PMArcGISUrl {
     }
 }
 
+function Read-PMArcGISPortalUrl {
+    Write-Host ''
+    Write-Host '  Portal for ArcGIS URL' -ForegroundColor Cyan
+    Write-Host '  Enter the Portal this server is federated with - examples:' -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '    https://portal.example.go.th/portal' -ForegroundColor Gray -NoNewline
+    Write-Host '   Web Adaptor in front of Portal (most common)' -ForegroundColor DarkGray
+    Write-Host '    https://localhost/portal' -ForegroundColor Gray -NoNewline
+    Write-Host '                when running on the Portal machine itself' -ForegroundColor DarkGray
+    Write-Host ''
+
+    $raw = Read-Host '  Portal URL (blank to cancel)'
+    if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
+
+    try { return Get-PMArcGISPortalRoot -Url $raw }
+    catch {
+        Write-Host ('  ' + $_.Exception.Message) -ForegroundColor Yellow
+        return $null
+    }
+}
+
 function Set-PMArcGISConnectionInteractive {
     $url = Read-PMArcGISUrl
     if ($null -eq $url) { return }
@@ -148,14 +172,41 @@ function Set-PMArcGISConnectionInteractive {
     Write-Host ('  Admin API  : {0}/admin' -f $url) -ForegroundColor DarkGray
 
     Write-Host ''
-    Write-Host '  Account' -ForegroundColor Cyan
-    Write-Host '  Use an ArcGIS Server account that can READ the site. Examples:' -ForegroundColor DarkGray
-    Write-Host '    siteadmin              built-in primary site administrator' -ForegroundColor Gray
-    Write-Host '    pmreader               a dedicated read-only account (preferred)' -ForegroundColor Gray
-    Write-Host '    DOMAIN\gis_monitor     when the site uses Windows accounts' -ForegroundColor Gray
+    Write-Host '  Federation' -ForegroundColor Cyan
+    Write-Host '  Is this ArcGIS Server federated with a Portal for ArcGIS?' -ForegroundColor DarkGray
+    Write-Host '  Answer yes if you sign in with a Portal named user rather than a' -ForegroundColor DarkGray
+    Write-Host '  server-only account such as siteadmin.' -ForegroundColor DarkGray
+    $fedAnswer = Read-Host '  Federated with Portal? (y/N)'
+
+    $authMode  = 'Server'
+    $portalUrl = ''
+    if ($fedAnswer.Trim().ToUpper() -eq 'Y') {
+        $portalUrl = Read-PMArcGISPortalUrl
+        if ($null -eq $portalUrl) { return }
+        $authMode = 'Portal'
+        Write-Host ''
+        Write-Host ('  Resolved to: {0}' -f $portalUrl) -ForegroundColor Green
+    }
+
     Write-Host ''
-    Write-Host '  PMtools only ever reads. A least-privilege account is enough and' -ForegroundColor DarkGray
-    Write-Host '  is safer than the primary site administrator.' -ForegroundColor DarkGray
+    Write-Host '  Account' -ForegroundColor Cyan
+    if ($authMode -eq 'Portal') {
+        Write-Host '  Sign in with a Portal member account that has administrative' -ForegroundColor DarkGray
+        Write-Host '  access to this federated server. A server-only account such as' -ForegroundColor DarkGray
+        Write-Host '  siteadmin will NOT work here - it does not exist in Portal.' -ForegroundColor DarkGray
+        Write-Host ''
+        Write-Host '  PMtools only ever reads. A least-privilege administrative role is' -ForegroundColor DarkGray
+        Write-Host '  enough and is safer than a full organization administrator.' -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host '  Use an ArcGIS Server account that can READ the site. Examples:' -ForegroundColor DarkGray
+        Write-Host '    siteadmin              built-in primary site administrator' -ForegroundColor Gray
+        Write-Host '    pmreader               a dedicated read-only account (preferred)' -ForegroundColor Gray
+        Write-Host '    DOMAIN\gis_monitor     when the site uses Windows accounts' -ForegroundColor Gray
+        Write-Host ''
+        Write-Host '  PMtools only ever reads. A least-privilege account is enough and' -ForegroundColor DarkGray
+        Write-Host '  is safer than the primary site administrator.' -ForegroundColor DarkGray
+    }
     Write-Host ''
 
     $user = Read-Host '  Username (blank to cancel)'
@@ -171,7 +222,8 @@ function Set-PMArcGISConnectionInteractive {
 
     Write-Host ''
     Write-Host '  Testing the connection...' -ForegroundColor DarkGray
-    $test = Test-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass
+    $test = Test-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass `
+                                    -AuthMode $authMode -PortalUrl $portalUrl
 
     Write-Host ''
     if (-not $test.Success) {
@@ -191,7 +243,8 @@ function Set-PMArcGISConnectionInteractive {
         if ($test.Message -ne 'Connected.') { Write-Host ('    ' + $test.Message) -ForegroundColor Yellow }
     }
 
-    $path = Save-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass
+    $path = Save-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass `
+                                    -AuthMode $authMode -PortalUrl $portalUrl
 
     Write-Host ''
     Write-Host ('  Saved to {0}' -f $path) -ForegroundColor Green
@@ -221,7 +274,8 @@ function Test-PMArcGISSavedConnection {
 
     Write-Host ''
     Write-Host ('  Testing {0} as {1}...' -f $conn.Url, $conn.Username) -ForegroundColor DarkGray
-    $test = Test-PMArcGISConnection -Url $conn.Url -Username $conn.Username -Password $conn.Password
+    $test = Test-PMArcGISConnection -Url $conn.Url -Username $conn.Username -Password $conn.Password `
+                                    -AuthMode $conn.AuthMode -PortalUrl $conn.PortalUrl
 
     Write-Host ''
     if ($test.Success) {

@@ -754,8 +754,15 @@ mock เดิมที่ `scratchpad\mock-arcgis-usage.ps1` **เขียน 
 
 - **self-signed certificate** — ไซต์ที่ทดสอบใช้ใบรับรองจริง `Disable-PMArcGISCertificateCheck`
   จึงยังไม่เคยถูกใช้งานจริง
-- **Portal-tier authentication** — ไซต์ที่ทดสอบใช้บัญชีของ ArcGIS Server เอง ถ้าไซต์ผูกกับ
-  Portal for ArcGIS `generateToken` ของ Server อาจใช้ไม่ได้ ต้องขอ token จาก Portal แทน
+- **Portal-tier authentication** — เพิ่มแล้วใน `Lib\ArcGIS.ps1`: `Get-PMArcGISToken` รับ
+  พารามิเตอร์ `AuthMode` (`Server`/`Portal`) และ `PortalUrl` เมื่อเลือก `Portal` จะขอ token จาก
+  `<portal>/sharing/rest/generateToken` แทน `<site>/admin/generateToken` (ผ่าน `Get-PMArcGISPortalRoot`
+  ตัวใหม่ที่ normalize URL แบบเดียวกับ `Get-PMArcGISRoot`) แล้วใช้ token นั้นเรียก Admin API ของ Server
+  เหมือนเดิมทุกจุด — เปลี่ยนแค่ที่มาของ token ไม่ใช่ปลายทางของคำขออื่น ๆ ตั้งค่าได้จากเมนู
+  `ArcGIS Server connection` -> `[1]` จะถามว่าไซต์ federate กับ Portal หรือไม่ ถ้าตอบ y จะถาม Portal URL
+  เพิ่มอีกช่อง เก็บไว้ใน `arcgis-connection.xml` เหมือน URL/username/password เดิม (ไฟล์เก่าที่ไม่มี
+  `AuthMode`/`PortalUrl` อ่านกลับมาเป็น `Server` โดยอัตโนมัติ) — **ยังไม่เคยทดสอบกับไซต์ Portal+Server
+  ที่ federate กันจริง** เพราะสภาพแวดล้อมนี้ไม่มีไซต์แบบนั้นให้ทดสอบ ตรวจแค่ parse และ ASCII-only ผ่าน
 - **ไซต์ที่มีมากกว่า 2 เครื่อง** — ตอนนี้เรียก status ทีละเครื่อง (1 + N ครั้ง) ไซต์ใหญ่ควรวัดเวลาก่อน
 - **ไซต์ที่ไม่มีรายงานถาวรเลย (`temp = false` ไม่มี)** — โค้ด `AGSUSAGE` ลดระดับเป็น `INFO` ตามที่
   ออกแบบไว้ แต่ยังไม่เคยเจอไซต์จริงที่อยู่ในสภาพนั้นเพื่อยืนยัน (ไซต์ทดสอบมี Manager ถูกเปิดใช้แล้ว)

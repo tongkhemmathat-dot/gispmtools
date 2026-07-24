@@ -123,6 +123,44 @@ function Get-PMArcGISAdminUrl {
     return ($Root + '/admin/' + $p)
 }
 
+# Same job as Get-PMArcGISRoot, for the Portal for ArcGIS site that a
+# federated ArcGIS Server trusts for sign-in. The forms people paste:
+#
+#   https://portal.example.go.th/portal         -> unchanged
+#   https://portal.example.go.th                -> .../portal (default site name)
+#   https://portal.example.go.th/portal/home    -> .../portal (trailing app page tolerated)
+#   https://portal.example.go.th/portal/sharing/rest -> .../portal (already-typed API path tolerated)
+function Get-PMArcGISPortalRoot {
+    param([Parameter(Mandatory)][string]$Url)
+
+    $u = $Url.Trim()
+    if ([string]::IsNullOrWhiteSpace($u)) { throw 'The Portal for ArcGIS URL is empty.' }
+
+    if ($u -notmatch '^https?://') { $u = 'https://' + $u }
+    $u = $u.TrimEnd('/')
+    $u = $u -replace '(?i)/sharing(/rest)?/?$', ''
+    $u = $u -replace '(?i)/home/?$', ''
+    $u = $u.TrimEnd('/')
+
+    $uri = $null
+    if (-not [Uri]::TryCreate($u, [UriKind]::Absolute, [ref]$uri)) {
+        throw "Not a valid URL: $Url"
+    }
+
+    # Host with no path at all: the default Portal site name is the only
+    # sensible guess, and it is right on a default install.
+    if ([string]::IsNullOrWhiteSpace($uri.AbsolutePath) -or $uri.AbsolutePath -eq '/') {
+        $u = $u + '/portal'
+    }
+
+    return $u
+}
+
+function Get-PMArcGISPortalTokenUrl {
+    param([Parameter(Mandatory)][string]$PortalRoot)
+    return ($PortalRoot + '/sharing/rest/generateToken')
+}
+
 # ---------------------------------------------------------------------
 # Stored connection
 #   URL and username are ordinary settings. The password is encrypted with
@@ -166,19 +204,26 @@ function Save-PMArcGISConnection {
         [Parameter(Mandatory)][string]$Url,
         [Parameter(Mandatory)][string]$Username,
         [Parameter(Mandatory)][System.Security.SecureString]$Password,
+        [ValidateSet('Server', 'Portal')][string]$AuthMode = 'Server',
+        [string]$PortalUrl = '',
         [string]$ConfigDir
     )
     $path = Get-PMArcGISConnectionPath -ConfigDir $ConfigDir
     $dir  = Split-Path -Parent $path
     if ($dir -and -not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
 
+    $resolvedPortalUrl = ''
+    if ($AuthMode -eq 'Portal') { $resolvedPortalUrl = Get-PMArcGISPortalRoot -Url $PortalUrl }
+
     [pscustomobject]@{
-        Url      = Get-PMArcGISRoot -Url $Url
-        Username = $Username
-        Password = ConvertFrom-SecureString -SecureString $Password
-        SavedBy  = "$env:USERDOMAIN\$env:USERNAME"
-        SavedOn  = $env:COMPUTERNAME
-        SavedAt  = (Get-Date).ToString('s')
+        Url       = Get-PMArcGISRoot -Url $Url
+        AuthMode  = $AuthMode
+        PortalUrl = $resolvedPortalUrl
+        Username  = $Username
+        Password  = ConvertFrom-SecureString -SecureString $Password
+        SavedBy   = "$env:USERDOMAIN\$env:USERNAME"
+        SavedOn   = $env:COMPUTERNAME
+        SavedAt   = (Get-Date).ToString('s')
     } | Export-Clixml -LiteralPath $path -Force
 
     return $path
@@ -205,14 +250,26 @@ function Get-PMArcGISConnection {
         }
     }
 
+    # AuthMode/PortalUrl were added after this file format shipped - a
+    # connection saved by an older PMtools has neither property, and reads
+    # back as plain server-tier auth (today's only behavior back then).
+    $authMode = 'Server'
+    if ($saved.PSObject.Properties['AuthMode'] -and -not [string]::IsNullOrWhiteSpace([string]$saved.AuthMode)) {
+        $authMode = [string]$saved.AuthMode
+    }
+    $portalUrl = ''
+    if ($saved.PSObject.Properties['PortalUrl']) { $portalUrl = [string]$saved.PortalUrl }
+
     return [pscustomobject]@{
-        Url      = [string]$saved.Url
-        Username = [string]$saved.Username
-        Password = $secure
-        SavedBy  = [string]$saved.SavedBy
-        SavedOn  = [string]$saved.SavedOn
-        SavedAt  = [string]$saved.SavedAt
-        Path     = $path
+        Url       = [string]$saved.Url
+        AuthMode  = $authMode
+        PortalUrl = $portalUrl
+        Username  = [string]$saved.Username
+        Password  = $secure
+        SavedBy   = [string]$saved.SavedBy
+        SavedOn   = [string]$saved.SavedOn
+        SavedAt   = [string]$saved.SavedAt
+        Path      = $path
     }
 }
 
@@ -229,12 +286,12 @@ function Clear-PMArcGISConnection {
 
 $Script:PMArcGISToken       = $null
 $Script:PMArcGISTokenExpiry = [datetime]::MinValue
-$Script:PMArcGISTokenRoot   = ''
+$Script:PMArcGISTokenKey    = ''
 
 function Clear-PMArcGISToken {
     $Script:PMArcGISToken       = $null
     $Script:PMArcGISTokenExpiry = [datetime]::MinValue
-    $Script:PMArcGISTokenRoot   = ''
+    $Script:PMArcGISTokenKey    = ''
 }
 
 # Converts a SecureString back to plain text for exactly as long as the web
@@ -253,12 +310,30 @@ function Get-PMArcGISToken {
         [Parameter(Mandatory)][string]$Root,
         [Parameter(Mandatory)][string]$Username,
         [Parameter(Mandatory)][System.Security.SecureString]$Password,
+        [ValidateSet('Server', 'Portal')][string]$AuthMode = 'Server',
+        [string]$PortalUrl = '',
         [int]$ExpirationMinutes = 60,
         [int]$TimeoutSec = 30,
         [switch]$Force
     )
 
-    if (-not $Force -and $Script:PMArcGISToken -and $Script:PMArcGISTokenRoot -eq $Root -and
+    # generateToken is hit on the ArcGIS Server itself for a standalone or
+    # server-tier login, or on its federated Portal instead when the saved
+    # connection says so - a federated server does not accept sign-in for a
+    # Portal-only named user at its own /admin/generateToken, only Portal
+    # does. Either way the resulting token is then used against the SAME
+    # server Admin API root everywhere else in this file; only where the
+    # token itself comes from changes.
+    if ($AuthMode -eq 'Portal') {
+        if ([string]::IsNullOrWhiteSpace($PortalUrl)) { throw 'Portal-federated auth is selected but no Portal URL is set.' }
+        $url = Get-PMArcGISPortalTokenUrl -PortalRoot (Get-PMArcGISPortalRoot -Url $PortalUrl)
+    }
+    else {
+        $url = Get-PMArcGISAdminUrl -Root $Root -Path 'generateToken'
+    }
+    $tokenKey = '{0}|{1}|{2}' -f $AuthMode, $Root, $url
+
+    if (-not $Force -and $Script:PMArcGISToken -and $Script:PMArcGISTokenKey -eq $tokenKey -and
         (Get-Date) -lt $Script:PMArcGISTokenExpiry) {
         return $Script:PMArcGISToken
     }
@@ -266,7 +341,6 @@ function Get-PMArcGISToken {
     Initialize-PMArcGISTransport
     if (Get-PMSetting -Path 'ArcGIS.IgnoreCertificateErrors' -Default $true) { Disable-PMArcGISCertificateCheck }
 
-    $url   = Get-PMArcGISAdminUrl -Root $Root -Path 'generateToken'
     $plain = ConvertFrom-PMSecureString -Secure $Password
 
     # client=requestip ties the token to the calling address, so a token
@@ -294,17 +368,18 @@ function Get-PMArcGISToken {
     # The Admin API answers HTTP 200 with an error object in the body rather
     # than an HTTP error status, so a bad password never lands in the catch
     # above - it has to be detected here.
+    $signInTarget = if ($AuthMode -eq 'Portal') { 'Portal for ArcGIS' } else { 'ArcGIS Server' }
     if ($resp.PSObject.Properties['error']) {
         $msg = $resp.error.message
         if ($resp.error.details) { $msg = $msg + ' - ' + ($resp.error.details -join '; ') }
-        throw ("ArcGIS Server rejected the sign-in: {0}" -f $msg)
+        throw ("{0} rejected the sign-in: {1}" -f $signInTarget, $msg)
     }
     if (-not $resp.token) {
-        throw 'ArcGIS Server returned no token and no error. Check that the URL points at an ArcGIS Server site.'
+        throw ("{0} returned no token and no error. Check that the URL points at a {0} site." -f $signInTarget)
     }
 
     $Script:PMArcGISToken     = [string]$resp.token
-    $Script:PMArcGISTokenRoot = $Root
+    $Script:PMArcGISTokenKey  = $tokenKey
     # Renew a minute early so a token cannot expire mid-run.
     $Script:PMArcGISTokenExpiry = (Get-Date).AddMinutes([math]::Max(1, $ExpirationMinutes - 1))
 
@@ -385,6 +460,7 @@ function Get-PMArcGISSession {
     $timeout = [int](Get-PMSetting -Path 'ArcGIS.TimeoutSeconds' -Default 30)
 
     $token = Get-PMArcGISToken -Root $conn.Url -Username $conn.Username -Password $conn.Password `
+                               -AuthMode $conn.AuthMode -PortalUrl $conn.PortalUrl `
                                -ExpirationMinutes $expiry -TimeoutSec $timeout
 
     return [pscustomobject]@{
@@ -403,6 +479,8 @@ function Test-PMArcGISConnection {
         [Parameter(Mandatory)][string]$Url,
         [Parameter(Mandatory)][string]$Username,
         [Parameter(Mandatory)][System.Security.SecureString]$Password,
+        [ValidateSet('Server', 'Portal')][string]$AuthMode = 'Server',
+        [string]$PortalUrl = '',
         [int]$TimeoutSec = 30
     )
 
@@ -418,6 +496,7 @@ function Test-PMArcGISConnection {
     try {
         $result.Root = Get-PMArcGISRoot -Url $Url
         $token = Get-PMArcGISToken -Root $result.Root -Username $Username -Password $Password `
+                                   -AuthMode $AuthMode -PortalUrl $PortalUrl `
                                    -TimeoutSec $TimeoutSec -Force
 
         $info = Invoke-PMArcGISAdmin -Root $result.Root -Path 'info' -Token $token -TimeoutSec $TimeoutSec
