@@ -377,8 +377,38 @@ function Get-PMArcGISToken {
     if (-not $resp.token) {
         throw ("{0} returned no token and no error. Check that the URL points at a {0} site." -f $signInTarget)
     }
+    $newToken = [string]$resp.token
 
-    $Script:PMArcGISToken     = [string]$resp.token
+    # A token-shaped, error-free generateToken response is not by itself
+    # proof the password was right - it only proves the Portal's token
+    # service accepted the request. /admin/info never requires a token at
+    # all, and the one Admin API call that does (/admin/machines, in
+    # Test-PMArcGISConnection) treats ANY failure there as "signed in but
+    # low-privilege" rather than "never signed in" - so a Portal that ever
+    # hands back a token without really authenticating the caller would
+    # read as a successful connection. Confirm the token actually
+    # identifies a signed-in Portal user via community/self, which errors
+    # for any token that is not genuinely tied to an account, before this
+    # function will hand the token to anything else.
+    if ($AuthMode -eq 'Portal') {
+        $selfUrl = (Get-PMArcGISPortalRoot -Url $PortalUrl) + '/sharing/rest/community/self'
+        try {
+            $self = Invoke-RestMethod -Uri $selfUrl -Method Get -Body @{ f = 'json'; token = $newToken } -TimeoutSec $TimeoutSec -ErrorAction Stop
+        }
+        catch {
+            throw ("Portal for ArcGIS issued a token but it could not be verified: {0}" -f $_.Exception.Message)
+        }
+        if ($self.PSObject.Properties['error']) {
+            $msg = $self.error.message
+            if ($self.error.details) { $msg = $msg + ' - ' + ($self.error.details -join '; ') }
+            throw ("Portal for ArcGIS rejected the sign-in: {0}" -f $msg)
+        }
+        if (-not $self.PSObject.Properties['username'] -or [string]::IsNullOrWhiteSpace([string]$self.username)) {
+            throw 'Portal for ArcGIS issued a token that does not identify a signed-in user. Check the username and password.'
+        }
+    }
+
+    $Script:PMArcGISToken     = $newToken
     $Script:PMArcGISTokenKey  = $tokenKey
     # Renew a minute early so a token cannot expire mid-run.
     $Script:PMArcGISTokenExpiry = (Get-Date).AddMinutes([math]::Max(1, $ExpirationMinutes - 1))
