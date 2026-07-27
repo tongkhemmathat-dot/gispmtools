@@ -41,9 +41,24 @@ Initialize-PMCore -ConfigDir $ConfigDir
 $defaultMinutes = [int](Get-PMSetting -Path 'Monitor.DefaultMinutes'  -Default 30)
 $interval       = [int](Get-PMSetting -Path 'Monitor.IntervalSeconds' -Default 10)
 $maxAgeHours    = [double](Get-PMSetting -Path 'Monitor.MaxDataAgeHours' -Default 24)
-$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.6')
+$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.8')
 
 function Write-PMRule { Write-Host ('=' * 62) -ForegroundColor DarkGray }
+
+# Shared rendering for every "[N]  Description" menu line, so the key that
+# gets pressed is visually distinct from its description everywhere instead
+# of blending into the same plain-color text - and so the bare-Enter default
+# is marked right on the list, not only in the "Choice [1]" prompt below it.
+function Write-PMMenuOption {
+    param([string]$Key, [string]$Text, [switch]$Default, [switch]$NoNewline)
+    Write-Host ('   [{0}]  ' -f $Key) -ForegroundColor White -NoNewline
+    if ($Default) {
+        Write-Host $Text -NoNewline
+        if (-not $NoNewline) { Write-Host '  (default)' -ForegroundColor DarkGray }
+    }
+    elseif ($NoNewline) { Write-Host $Text -NoNewline }
+    else { Write-Host $Text }
+}
 
 function Get-PMFinishText {
     param([int]$Minutes)
@@ -117,8 +132,7 @@ function Show-PMArcGISStatus {
     }
 }
 
-function Read-PMArcGISUrl {
-    Write-Host ''
+function Show-PMArcGISUrlHelp {
     Write-Host '  ArcGIS Server site URL' -ForegroundColor Cyan
     Write-Host '  Enter the site address WITHOUT the /admin part - examples:' -ForegroundColor DarkGray
     Write-Host ''
@@ -131,19 +145,9 @@ function Read-PMArcGISUrl {
     Write-Host ''
     Write-Host '  A trailing /admin is accepted and removed for you.' -ForegroundColor DarkGray
     Write-Host ''
-
-    $raw = Read-Host '  Site URL (blank to cancel)'
-    if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
-
-    try { return Get-PMArcGISRoot -Url $raw }
-    catch {
-        Write-Host ('  ' + $_.Exception.Message) -ForegroundColor Yellow
-        return $null
-    }
 }
 
-function Read-PMArcGISPortalUrl {
-    Write-Host ''
+function Show-PMArcGISPortalUrlHelp {
     Write-Host '  Portal for ArcGIS URL' -ForegroundColor Cyan
     Write-Host '  Enter the Portal this server is federated with - examples:' -ForegroundColor DarkGray
     Write-Host ''
@@ -152,77 +156,189 @@ function Read-PMArcGISPortalUrl {
     Write-Host '    https://localhost/portal' -ForegroundColor Gray -NoNewline
     Write-Host '                when running on the Portal machine itself' -ForegroundColor DarkGray
     Write-Host ''
+}
 
-    $raw = Read-Host '  Portal URL (blank to cancel)'
-    if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
+# Every step below redraws through this - Back always lands on a clean
+# screen instead of printing under whatever was already there, same rhythm
+# as the mode/sampling screens further down this file, just applied per step.
+function Show-PMArcGISWizardHeader {
+    param([int]$Step, [int]$TotalSteps)
+    Clear-Host
+    Write-PMRule
+    Write-Host ('  ArcGIS Server connection - step {0} of {1}' -f $Step, $TotalSteps) -ForegroundColor Cyan
+    Write-PMRule
+    Write-Host ''
+}
 
-    try { return Get-PMArcGISPortalRoot -Url $raw }
-    catch {
-        Write-Host ('  ' + $_.Exception.Message) -ForegroundColor Yellow
-        return $null
-    }
+# Recaps whatever has already been decided, since each step now only shows
+# its own prompt - without this the operator would lose sight of the site
+# URL (and Portal URL, and account) they already entered on earlier steps.
+function Show-PMArcGISWizardContext {
+    param([string]$Url, [string]$AuthMode, [string]$PortalUrl, [string]$User)
+    if ($Url)                                          { Write-Host ('  Site: {0}' -f $Url) -ForegroundColor DarkGray }
+    if ($AuthMode -eq 'Portal' -and $PortalUrl)         { Write-Host ('  Portal: {0}' -f $PortalUrl) -ForegroundColor DarkGray }
+    if ($User)                                          { Write-Host ('  Account: {0}' -f $User) -ForegroundColor DarkGray }
+    Write-Host ''
 }
 
 function Set-PMArcGISConnectionInteractive {
-    $url = Read-PMArcGISUrl
-    if ($null -eq $url) { return }
-
-    Write-Host ''
-    Write-Host ('  Resolved to: {0}' -f $url) -ForegroundColor Green
-    Write-Host ('  Admin API  : {0}/admin' -f $url) -ForegroundColor DarkGray
-
-    Write-Host ''
-    Write-Host '  Federation' -ForegroundColor Cyan
-    Write-Host '  Is this ArcGIS Server federated with a Portal for ArcGIS?' -ForegroundColor DarkGray
-    Write-Host '  Answer yes if you sign in with a Portal named user rather than a' -ForegroundColor DarkGray
-    Write-Host '  server-only account such as siteadmin.' -ForegroundColor DarkGray
-    $fedAnswer = Read-Host '  Federated with Portal? (y/N)'
-
+    $url       = $null
     $authMode  = 'Server'
     $portalUrl = ''
-    if ($fedAnswer.Trim().ToUpper() -eq 'Y') {
-        $portalUrl = Read-PMArcGISPortalUrl
-        if ($null -eq $portalUrl) { return }
-        $authMode = 'Portal'
-        Write-Host ''
-        Write-Host ('  Resolved to: {0}' -f $portalUrl) -ForegroundColor Green
+    $user      = $null
+    $pass      = $null
+
+    # 1=URL 2=Federation 3=Portal URL (only when federated) 4=Username
+    # 5=Password 6=done (falls out of the loop into the Test+Save below).
+    #
+    # "B"/"Q" are checked BEFORE anything is handed to a URL parser at every
+    # step, so typing the single letter "b" can never be mistaken for a
+    # (nonsensical but syntactically valid - Get-PMArcGISRoot prepends
+    # https:// to anything scheme-less) URL like "https://b".
+    #
+    # Every case below only ever sets $step (or returns) and lets the
+    # switch end normally - it never relies on `continue` to "restart the
+    # loop". `continue` inside a switch binds to the switch, not to this
+    # enclosing while, so it would just fall through past the switch
+    # instead of redrawing - the exact break/continue-binds-to-switch trap
+    # already documented above the sampling-duration loop further down
+    # this file, hit once before and worth not repeating here.
+    $step = 1
+    while ($step -ge 1 -and $step -le 5) {
+        switch ($step) {
+            1 {
+                Show-PMArcGISWizardHeader -Step 1 -TotalSteps 5
+                Show-PMArcGISUrlHelp
+                $raw = Read-Host '  Site URL (blank to cancel)'
+                if ([string]::IsNullOrWhiteSpace($raw)) { return }
+
+                try {
+                    $url = Get-PMArcGISRoot -Url $raw
+                    Write-Host ''
+                    Write-Host ('  Resolved to: {0}' -f $url) -ForegroundColor Green
+                    Write-Host ('  Admin API  : {0}/admin' -f $url) -ForegroundColor DarkGray
+                    Write-Host ''
+                    Read-Host '  Press Enter to continue' | Out-Null
+                    $step = 2
+                }
+                catch {
+                    Write-Host ('  ' + $_.Exception.Message) -ForegroundColor Yellow
+                    Write-Host ''
+                    Read-Host '  Press Enter to try again' | Out-Null
+                }
+            }
+            2 {
+                Show-PMArcGISWizardHeader -Step 2 -TotalSteps 5
+                Show-PMArcGISWizardContext -Url $url
+                Write-Host '  Federation' -ForegroundColor Cyan
+                Write-Host '  Is this ArcGIS Server federated with a Portal for ArcGIS?' -ForegroundColor DarkGray
+                Write-Host '  Answer yes if you sign in with a Portal named user rather than a' -ForegroundColor DarkGray
+                Write-Host '  server-only account such as siteadmin.' -ForegroundColor DarkGray
+                $fedAnswer = (Read-Host '  Federated with Portal? (y/N, B to go back, Q to cancel)').Trim().ToUpper()
+
+                if     ($fedAnswer -eq 'B') { $step = 1 }
+                elseif ($fedAnswer -eq 'Q') { Write-Host ''; Write-Host '  Cancelled.' -ForegroundColor Yellow; return }
+                elseif ($fedAnswer -eq 'Y') { $authMode = 'Portal'; $step = 3 }
+                else                        { $authMode = 'Server'; $portalUrl = ''; $step = 4 }
+            }
+            3 {
+                Show-PMArcGISWizardHeader -Step 3 -TotalSteps 5
+                Show-PMArcGISWizardContext -Url $url -AuthMode $authMode
+                Show-PMArcGISPortalUrlHelp
+                $raw = Read-Host '  Portal URL (blank or B to go back, Q to cancel)'
+                $ans = $raw.Trim().ToUpper()
+
+                if ([string]::IsNullOrWhiteSpace($raw) -or $ans -eq 'B') { $step = 2 }
+                elseif ($ans -eq 'Q') { Write-Host ''; Write-Host '  Cancelled.' -ForegroundColor Yellow; return }
+                else {
+                    try {
+                        $portalUrl = Get-PMArcGISPortalRoot -Url $raw
+                        Write-Host ''
+                        Write-Host ('  Resolved to: {0}' -f $portalUrl) -ForegroundColor Green
+                        Write-Host ''
+                        Read-Host '  Press Enter to continue' | Out-Null
+                        $step = 4
+                    }
+                    catch {
+                        Write-Host ('  ' + $_.Exception.Message) -ForegroundColor Yellow
+                        Write-Host ''
+                        Read-Host '  Press Enter to try again' | Out-Null
+                    }
+                }
+            }
+            4 {
+                Show-PMArcGISWizardHeader -Step 4 -TotalSteps 5
+                Show-PMArcGISWizardContext -Url $url -AuthMode $authMode -PortalUrl $portalUrl
+                Write-Host '  Account' -ForegroundColor Cyan
+                if ($authMode -eq 'Portal') {
+                    Write-Host '  Sign in with a Portal member account that has administrative' -ForegroundColor DarkGray
+                    Write-Host '  access to this federated server. A server-only account such as' -ForegroundColor DarkGray
+                    Write-Host '  siteadmin will NOT work here - it does not exist in Portal.' -ForegroundColor DarkGray
+                    Write-Host ''
+                    Write-Host '  PMtools only ever reads. A least-privilege administrative role is' -ForegroundColor DarkGray
+                    Write-Host '  enough and is safer than a full organization administrator.' -ForegroundColor DarkGray
+                }
+                else {
+                    Write-Host '  Use an ArcGIS Server account that can READ the site. Examples:' -ForegroundColor DarkGray
+                    Write-Host '    siteadmin              built-in primary site administrator' -ForegroundColor Gray
+                    Write-Host '    pmreader               a dedicated read-only account (preferred)' -ForegroundColor Gray
+                    Write-Host '    DOMAIN\gis_monitor     when the site uses Windows accounts' -ForegroundColor Gray
+                    Write-Host ''
+                    Write-Host '  PMtools only ever reads. A least-privilege account is enough and' -ForegroundColor DarkGray
+                    Write-Host '  is safer than the primary site administrator.' -ForegroundColor DarkGray
+                }
+                Write-Host ''
+                $raw = Read-Host '  Username (blank or B to go back, Q to cancel)'
+                $ans = $raw.Trim().ToUpper()
+
+                if ([string]::IsNullOrWhiteSpace($raw) -or $ans -eq 'B') {
+                    $step = if ($authMode -eq 'Portal') { 3 } else { 2 }
+                }
+                elseif ($ans -eq 'Q') { Write-Host ''; Write-Host '  Cancelled.' -ForegroundColor Yellow; return }
+                else { $user = $raw.Trim(); $step = 5 }
+            }
+            5 {
+                Show-PMArcGISWizardHeader -Step 5 -TotalSteps 5
+                Show-PMArcGISWizardContext -Url $url -AuthMode $authMode -PortalUrl $portalUrl -User $user
+                Write-Host '  The password is not shown as you type.' -ForegroundColor DarkGray
+                Write-Host '  Type B and Enter to go back, or Q and Enter to cancel.' -ForegroundColor DarkGray
+                $secure = Read-Host '  Password' -AsSecureString
+
+                $plain = $null
+                if ($secure -and $secure.Length -gt 0) { $plain = ConvertFrom-PMSecureString -Secure $secure }
+
+                if ([string]::IsNullOrWhiteSpace($plain)) {
+                    $plain = $null
+                    Write-Host ''
+                    Write-Host '  No password entered - going back.' -ForegroundColor Yellow
+                    Write-Host ''
+                    Read-Host '  Press Enter to continue' | Out-Null
+                    $step = 4
+                }
+                elseif ($plain.Trim().ToUpper() -eq 'B') {
+                    $plain = $null
+                    $step  = 4
+                }
+                elseif ($plain.Trim().ToUpper() -eq 'Q') {
+                    $plain = $null
+                    Write-Host ''
+                    Write-Host '  Cancelled.' -ForegroundColor Yellow
+                    return
+                }
+                else {
+                    $pass  = $secure
+                    $plain = $null
+                    $step  = 6
+                }
+            }
+        }
     }
 
-    Write-Host ''
-    Write-Host '  Account' -ForegroundColor Cyan
-    if ($authMode -eq 'Portal') {
-        Write-Host '  Sign in with a Portal member account that has administrative' -ForegroundColor DarkGray
-        Write-Host '  access to this federated server. A server-only account such as' -ForegroundColor DarkGray
-        Write-Host '  siteadmin will NOT work here - it does not exist in Portal.' -ForegroundColor DarkGray
-        Write-Host ''
-        Write-Host '  PMtools only ever reads. A least-privilege administrative role is' -ForegroundColor DarkGray
-        Write-Host '  enough and is safer than a full organization administrator.' -ForegroundColor DarkGray
-    }
-    else {
-        Write-Host '  Use an ArcGIS Server account that can READ the site. Examples:' -ForegroundColor DarkGray
-        Write-Host '    siteadmin              built-in primary site administrator' -ForegroundColor Gray
-        Write-Host '    pmreader               a dedicated read-only account (preferred)' -ForegroundColor Gray
-        Write-Host '    DOMAIN\gis_monitor     when the site uses Windows accounts' -ForegroundColor Gray
-        Write-Host ''
-        Write-Host '  PMtools only ever reads. A least-privilege account is enough and' -ForegroundColor DarkGray
-        Write-Host '  is safer than the primary site administrator.' -ForegroundColor DarkGray
-    }
-    Write-Host ''
-
-    $user = Read-Host '  Username (blank to cancel)'
-    if ([string]::IsNullOrWhiteSpace($user)) { return }
-
-    Write-Host ''
-    Write-Host '  The password is not shown as you type.' -ForegroundColor DarkGray
-    $pass = Read-Host '  Password' -AsSecureString
-    if ($null -eq $pass -or $pass.Length -eq 0) {
-        Write-Host '  Cancelled - no password entered.' -ForegroundColor Yellow
-        return
-    }
+    if ($step -ne 6) { return }
 
     Write-Host ''
     Write-Host '  Testing the connection...' -ForegroundColor DarkGray
-    $test = Test-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass `
+    $test = Test-PMArcGISConnection -Url $url -Username $user -Password $pass `
                                     -AuthMode $authMode -PortalUrl $portalUrl
 
     Write-Host ''
@@ -243,7 +359,7 @@ function Set-PMArcGISConnectionInteractive {
         if ($test.Message -ne 'Connected.') { Write-Host ('    ' + $test.Message) -ForegroundColor Yellow }
     }
 
-    $path = Save-PMArcGISConnection -Url $url -Username $user.Trim() -Password $pass `
+    $path = Save-PMArcGISConnection -Url $url -Username $user -Password $pass `
                                     -AuthMode $authMode -PortalUrl $portalUrl
 
     Write-Host ''
@@ -299,11 +415,11 @@ function Show-PMArcGISMenu {
         Write-Host ''
         Show-PMArcGISStatus
         Write-Host ''
-        Write-Host '   [1]  Set connection (URL, username, password)'
-        Write-Host '   [2]  Test the saved connection'
-        Write-Host '   [3]  Remove the saved connection'
+        Write-PMMenuOption -Key '1' -Text 'Set connection (URL, username, password)'
+        Write-PMMenuOption -Key '2' -Text 'Test the saved connection'
+        Write-PMMenuOption -Key '3' -Text 'Remove the saved connection'
         Write-Host ''
-        Write-Host '   [B]  Back to the main menu'
+        Write-PMMenuOption -Key 'B' -Text 'Back to the main menu'
         Write-Host ''
 
         $c = Read-Host '  Choice'
@@ -384,13 +500,13 @@ while (-not $ready) {
 
         Write-Host '  What do you want to check?'
         Write-Host ''
-        Write-Host '   [1]  Server - the regular maintenance checks'
-        Write-Host '   [2]  ArcGIS Server - site, services, usage reports  ' -NoNewline
+        Write-PMMenuOption -Key '1' -Text 'Server - the regular maintenance checks' -Default
+        Write-PMMenuOption -Key '2' -Text 'ArcGIS Server - site, services, usage reports  ' -NoNewline
         Write-Host $agsHint -ForegroundColor DarkGray
         Write-Host ''
-        Write-Host '   [A]  ArcGIS Server connection...'
+        Write-PMMenuOption -Key 'A' -Text 'ArcGIS Server connection...'
         Write-Host ''
-        Write-Host '   [Q]  Quit'
+        Write-PMMenuOption -Key 'Q' -Text 'Quit'
         Write-Host ''
 
         $modeChoice = Read-Host '  Choice [1]'
@@ -450,16 +566,16 @@ while (-not $ready) {
 
         Write-Host '  Collect CPU / memory samples before the assessment?'
         Write-Host ''
-        Write-Host '   [1]  No sampling - assess now                 ' -NoNewline
-        Write-Host '(about 10 s)' -ForegroundColor DarkGray
-        Write-Host ('   [2]  Sample 15 minutes, then assess           ({0})' -f (Get-PMFinishText 15))
-        Write-Host ('   [3]  Sample {0} minutes, then assess           ({1})' -f $defaultMinutes, (Get-PMFinishText $defaultMinutes))
-        Write-Host ('   [4]  Sample 60 minutes, then assess           ({0})' -f (Get-PMFinishText 60))
-        Write-Host '   [5]  Sample for a custom duration...'
-        Write-Host '   [6]  Sample only - do not build a report'
+        Write-PMMenuOption -Key '1' -Text 'No sampling - assess now                 ' -NoNewline
+        Write-Host '(about 10 s, default)' -ForegroundColor DarkGray
+        Write-PMMenuOption -Key '2' -Text ('Sample 15 minutes, then assess           ({0})' -f (Get-PMFinishText 15))
+        Write-PMMenuOption -Key '3' -Text ('Sample {0} minutes, then assess           ({1})' -f $defaultMinutes, (Get-PMFinishText $defaultMinutes))
+        Write-PMMenuOption -Key '4' -Text ('Sample 60 minutes, then assess           ({0})' -f (Get-PMFinishText 60))
+        Write-PMMenuOption -Key '5' -Text 'Sample for a custom duration...'
+        Write-PMMenuOption -Key '6' -Text 'Sample only - do not build a report'
         Write-Host ''
-        Write-Host '   [B]  Back'
-        Write-Host '   [Q]  Quit'
+        Write-PMMenuOption -Key 'B' -Text 'Back'
+        Write-PMMenuOption -Key 'Q' -Text 'Quit'
         Write-Host ''
 
         $choice = Read-Host '  Choice [1]'
