@@ -164,8 +164,8 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <table>
   <thead><tr><th>ไฟล์</th><th>ใช้ทำอะไร</th></tr></thead>
   <tbody>
-    <tr><td class="mono">PM-Report.html</td><td>รายงานที่ส่งให้ผู้ใช้ เปิดได้ทุกเครื่อง ไม่ต้องติดตั้งอะไร ไม่ต้องต่อเน็ต สั่งพิมพ์เป็น PDF ได้</td></tr>
-    <tr><td class="mono">PM-Data.json</td><td>ข้อมูลดิบทั้งหมดของรอบนั้น เก็บไว้เทียบย้อนหลังหรือส่งต่อระบบอื่น</td></tr>
+    <tr><td class="mono">PM-Report-&lt;ชื่อเครื่อง&gt;_&lt;วันเวลา&gt;.html</td><td>รายงานที่ส่งให้ผู้ใช้ เปิดได้ทุกเครื่อง ไม่ต้องติดตั้งอะไร ไม่ต้องต่อเน็ต สั่งพิมพ์เป็น PDF ได้</td></tr>
+    <tr><td class="mono">PM-Report-&lt;ชื่อเครื่อง&gt;_&lt;วันเวลา&gt;.json</td><td>ข้อมูลดิบทั้งหมดของรอบนั้น เก็บไว้เทียบย้อนหลังหรือส่งต่อระบบอื่น</td></tr>
   </tbody>
 </table>
 </div>
@@ -324,8 +324,8 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <pre><code>D:\ตรวจเครื่อง\
     PMtools-1.7.7.cmd
     SRV-APP01_20260722-1305\      &lt;- รอบนี้
-        PM-Report.html
-        PM-Data.json
+        PM-Report-SRV-APP01_20260722-1305.html
+        PM-Report-SRV-APP01_20260722-1305.json
     SRV-APP01_20260721-0930\      &lt;- รอบก่อน แยกโฟลเดอร์ ไม่ทับกัน</code></pre>
 
 <p>ต่างจากแบบโฟลเดอร์ตรงที่ไม่มีชั้น <span class="mono">Output\</span> คั่น
@@ -386,9 +386,9 @@ PMtools-1.7.7.cmd -MonitorMinutes 30</code></pre>
 <section id="s5">
 <h2><span class="n">5</span>ส่งออกเป็น Word (.docx)</h2>
 
-<p><span class="mono">PM-Report.html</span> เปิดดูและสั่งพิมพ์เป็น PDF ได้อยู่แล้ว
+<p>รายงาน HTML (<span class="mono">PM-Report-&lt;ชื่อเครื่อง&gt;_&lt;วันเวลา&gt;.html</span>) เปิดดูและสั่งพิมพ์เป็น PDF ได้อยู่แล้ว
 แต่บางหน่วยงานต้องการไฟล์ Word เพื่อแก้ไขเพิ่มเติมก่อนแนบหนังสือราชการ
-<span class="mono">Export-PMDocxReport.ps1</span> แปลง <span class="mono">PM-Data.json</span> ที่ตรวจไว้แล้ว
+<span class="mono">Export-PMDocxReport.ps1</span> แปลงไฟล์ JSON คู่กัน (<span class="mono">PM-Report-&lt;ชื่อเครื่อง&gt;_&lt;วันเวลา&gt;.json</span>) ที่ตรวจไว้แล้ว
 ให้เป็นเอกสาร Word สองภาษาไทย/อังกฤษ หน้าตาเทียบเท่ารายงาน HTML</p>
 
 <div class="callout c-info">
@@ -396,25 +396,25 @@ PMtools-1.7.7.cmd -MonitorMinutes 30</code></pre>
   <p>ตัวตรวจ (<span class="mono">Start-PMCheck.ps1</span> หรือไฟล์เดียวจาก<a href="#s4">หัวข้อที่ 4</a>)
   รันบนเครื่องแม่ข่ายที่ต้องการตรวจ อ่านค่าอย่างเดียวไม่ต้องพึ่งโปรแกรมอะไรเพิ่ม
   ส่วนตัวแปลง Word รันบนเครื่องของผู้ดูแลระบบเอง (เครื่องที่มี Microsoft Word ติดตั้งอยู่)
-  สิ่งที่ต้องย้ายข้ามเครื่องมีแค่ไฟล์ <span class="mono">PM-Data.json</span> ไฟล์เดียว
+  สิ่งที่ต้องย้ายข้ามเครื่องมีแค่ไฟล์ JSON ไฟล์เดียว
   คัดลอกผ่านอีเมล แชร์โฟลเดอร์ หรือ USB ก็ได้</p>
 </div>
 
 <h3>วิธีใช้</h3>
 <ol class="steps">
   <li>
-    <div class="h">คัดลอก PM-Data.json มาที่เครื่องของตัวเอง</div>
-    <p>ไฟล์นี้อยู่ในโฟลเดอร์รายงานที่ได้จากการตรวจ ข้าง ๆ <span class="mono">PM-Report.html</span> เสมอ</p>
+    <div class="h">คัดลอกไฟล์ PM-Report-&lt;ชื่อเครื่อง&gt;_&lt;วันเวลา&gt;.json มาที่เครื่องของตัวเอง</div>
+    <p>ไฟล์นี้อยู่ในโฟลเดอร์รายงานที่ได้จากการตรวจ ข้าง ๆ ไฟล์ .html เสมอ</p>
   </li>
   <li>
     <div class="h">เปิด PowerShell ที่โฟลเดอร์ PMtools แล้วสั่ง</div>
-<pre><code>.\Export-PMDocxReport.ps1 -DataPath D:\ผลตรวจ\PM-Data.json -OpenReport</code></pre>
+<pre><code>.\Export-PMDocxReport.ps1 -DataPath D:\ผลตรวจ\PM-Report-SRV-APP01_20260722-1305.json -OpenReport</code></pre>
   </li>
   <li>
     <div class="h">ได้ไฟล์ PM-Report.docx</div>
-    <p>สร้างไว้ข้าง ๆ ไฟล์ <span class="mono">PM-Data.json</span> ที่อ่านโดยอัตโนมัติ
+    <p>สร้างไว้ข้าง ๆ ไฟล์ JSON ที่อ่านโดยอัตโนมัติ
     หรือระบุปลายทางเองด้วย <span class="mono">-OutputPath</span></p>
-<pre><code>.\Export-PMDocxReport.ps1 -DataPath D:\ผลตรวจ\PM-Data.json -OutputPath D:\ส่งราชการ\ฉบับสมบูรณ์.docx</code></pre>
+<pre><code>.\Export-PMDocxReport.ps1 -DataPath D:\ผลตรวจ\PM-Report-SRV-APP01_20260722-1305.json -OutputPath D:\ส่งราชการ\ฉบับสมบูรณ์.docx</code></pre>
   </li>
 </ol>
 
@@ -428,7 +428,7 @@ PMtools-1.7.7.cmd -MonitorMinutes 30</code></pre>
 <h3>ชื่อหน่วยงานมาจากไหน</h3>
 <p>ชื่อหน่วยงาน ส่วนงาน ชื่อระบบ และผู้ตรวจสอบ
 <strong>อ่านจาก <span class="mono">Config\settings.json</span> ของเครื่องที่รันตัวแปลงนี้</strong>
-ไม่ใช่จากไฟล์ <span class="mono">PM-Data.json</span> — ไฟล์นั้นไม่ได้เก็บค่ากลุ่มนี้ไว้โดยตั้งใจ
+ไม่ใช่จากไฟล์ JSON ที่ตรวจไว้ — ไฟล์นั้นไม่ได้เก็บค่ากลุ่มนี้ไว้โดยตั้งใจ
 แก้ค่าที่ <span class="mono">Config\settings.json</span> ตาม<a href="#s11">หัวข้อที่ 11</a> ได้ตามปกติ
 ก่อนรันคำสั่งข้างต้น</p>
 
@@ -749,7 +749,7 @@ ArcGIS Server และต้อง<strong>ตั้งค่าการเช�
   <div class="t">AGSDATA ไม่เก็บหรือแสดงรหัสผ่านฐานข้อมูลเด็ดขาด</div>
   <p>ไซต์จะส่งข้อมูลการเชื่อมต่อ (ชื่อเซิร์ฟเวอร์ ชื่อฐานข้อมูล ชื่อบัญชี และรหัสผ่านที่เข้ารหัสไว้)
   มาให้เครื่องมือใช้ทดสอบการเชื่อมต่อเท่านั้น <strong>ข้อมูลชุดนี้ไม่เคยถูกบันทึกลง
-  <span class="mono">PM-Data.json</span> หรือแสดงในรายงานเลย</strong> สิ่งที่บันทึกไว้มีแค่ชื่อรายการ
+  ไฟล์ข้อมูลดิบ (.json) หรือแสดงในรายงานเลย</strong> สิ่งที่บันทึกไว้มีแค่ชื่อรายการ
   ประเภท และผลว่าเชื่อมต่อได้หรือไม่ได้เท่านั้น</p>
 </div>
 
@@ -829,7 +829,7 @@ ArcGIS Server และต้อง<strong>ตั้งค่าการเช�
 
 <div class="callout c-ok">
   <div class="t">ข้อเสนอแนะไม่ได้หายไปไหน</div>
-  <p>แม้ปิดการแสดงผลในรายงาน ข้อเสนอแนะฉบับเต็มยังถูกคำนวณและเก็บไว้ใน <code>PM-Data.json</code>
+  <p>แม้ปิดการแสดงผลในรายงาน ข้อเสนอแนะฉบับเต็มยังถูกคำนวณและเก็บไว้ในไฟล์ข้อมูลดิบ (.json)
   ครบทุกครั้ง จึงย้อนไปดูได้ตลอดโดยไม่ต้องรันใหม่</p>
 </div>
 

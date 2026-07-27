@@ -250,7 +250,9 @@ $meta = [pscustomobject]@{
     Config      = Get-PMConfig
 }
 
-$jsonPath = Join-Path $outDir 'PM-Data.json'
+$reportBaseName = "PM-Report-{0}_{1}" -f $env:COMPUTERNAME, $startedAt.ToString('yyyyMMdd-HHmm')
+
+$jsonPath = Join-Path $outDir ($reportBaseName + '.json')
 $payload  = [pscustomobject]@{
     Meta    = [pscustomobject]@{
         Hostname    = $meta.Hostname
@@ -265,7 +267,7 @@ $payload  = [pscustomobject]@{
 # Thai text readable to any consumer regardless of how the file is opened.
 $payload | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $jsonPath -Encoding UTF8
 
-$htmlPath = Join-Path $outDir 'PM-Report.html'
+$htmlPath = Join-Path $outDir ($reportBaseName + '.html')
 $html     = New-PMHtmlReport -Results $results -Meta $meta
 # UTF-8 *with* BOM so browsers never guess the encoding wrong on the Thai text.
 [System.IO.File]::WriteAllText($htmlPath, $html, (New-Object System.Text.UTF8Encoding($true)))
