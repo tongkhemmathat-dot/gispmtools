@@ -31,9 +31,10 @@
 ไม่ตั้งค่า ไม่แก้ registry ไม่เริ่ม/หยุดบริการ ไม่ติดตั้งอะไร และ**ไม่รีสตาร์ทเครื่อง**
 สิ่งเดียวที่เขียนลงดิสก์คือโฟลเดอร์รายงานใน `Output\`
 
-มีเจ็ดหัวข้อที่ติดต่อออกนอกเครื่อง (`WU` ถาม WSUS/Microsoft Update, `CONN` ส่ง ping,
+มีแปดหัวข้อที่ติดต่อออกนอกเครื่อง (`WU` ถาม WSUS/Microsoft Update, `CONN` ส่ง ping,
+`SMBCONN` เชื่อมต่อพอร์ต 445 และเปิดอ่าน share ของ NAS ที่ตั้งค่าไว้,
 `AGS`/`AGSSVC`/`AGSUSAGE`/`AGSDATA`/`AGSLOG` ตรวจ **ArcGIS Server** ผ่าน Administrator API แบบอ่านอย่างเดียว)
-ทั้งเจ็ด**ปิดไว้เป็นค่าเริ่มต้น** เปิดใช้เฉพาะครั้งได้ด้วย `-Only WU` หรือ `-Group ArcGIS`
+ทั้งแปด**ปิดไว้เป็นค่าเริ่มต้น** เปิดใช้เฉพาะครั้งได้ด้วย `-Only WU` หรือ `-Group ArcGIS`
 เป็นต้น หัวข้อ ArcGIS ต้องตั้งค่าการเชื่อมต่อก่อนใช้งานครั้งแรกด้วย (เมนูหลัก ->
 `ArcGIS Server connection...`) และไม่รันรวมกับหัวข้อ Server ในรอบเดียวกัน
 รายละเอียดครบอยู่ใน [docs/CHECKS.md](docs/CHECKS.md#arcgis-server)
@@ -50,7 +51,7 @@
 หรือสั่งจาก command line รอบเดียวจบ ไม่ผ่านเมนู (เหมาะกับ Scheduled Task หรือรันจากระยะไกล):
 
 ```cmd
-PMtools-1.7.8.cmd -Only DISK,CERT -OpenReport
+PMtools-1.7.9.cmd -Only DISK,CERT -OpenReport
 ```
 
 ผลลัพธ์ (`<ชื่อเครื่อง>_<วันเวลา>\PM-Report-<ชื่อเครื่อง>_<วันเวลา>.html`) จะออกมาข้างไฟล์ `.cmd` นั้นโดยตรง

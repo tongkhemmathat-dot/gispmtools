@@ -456,6 +456,27 @@ function ConvertTo-PMGB {
     return [math]::Round(([double]$Bytes / 1GB), $Decimals)
 }
 
+# Shared by Checks\97-SmbConnectivity.ps1 and the "Test NAS / SMB
+# connectivity" menu (Show-PMMenu.ps1) - a fast TCP connect with its own
+# timeout, because Test-NetConnection has none on PowerShell 5.1 and waits
+# out the OS default on every unreachable target.
+function Test-PMSmbPort {
+    param([string]$ComputerName, [int]$Port, [int]$TimeoutMs)
+
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $iar = $client.BeginConnect($ComputerName, $Port, $null, $null)
+        $signalled = $iar.AsyncWaitHandle.WaitOne($TimeoutMs, $false)
+        if ($signalled -and $client.Connected) {
+            $client.EndConnect($iar)
+            return $true
+        }
+        return $false
+    }
+    catch { return $false }
+    finally { $client.Close() }
+}
+
 # ---------------------------------------------------------------------
 # CPU and memory sampling
 #   Kept here so the PERF check and Start-PMMonitor.ps1 read the same numbers

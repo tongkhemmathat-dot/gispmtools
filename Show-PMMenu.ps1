@@ -41,7 +41,7 @@ Initialize-PMCore -ConfigDir $ConfigDir
 $defaultMinutes = [int](Get-PMSetting -Path 'Monitor.DefaultMinutes'  -Default 30)
 $interval       = [int](Get-PMSetting -Path 'Monitor.IntervalSeconds' -Default 10)
 $maxAgeHours    = [double](Get-PMSetting -Path 'Monitor.MaxDataAgeHours' -Default 24)
-$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.8')
+$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.9')
 
 function Write-PMRule { Write-Host ('=' * 62) -ForegroundColor DarkGray }
 
@@ -100,6 +100,22 @@ function Read-PMCustomMinutes {
         $value = 0
         if ([int]::TryParse($raw.Trim(), [ref]$value) -and $value -ge 1 -and $value -le 1440) { return $value }
         Write-Host '  Please enter a whole number between 1 and 1440.' -ForegroundColor Yellow
+    }
+}
+
+# Same shape as Read-PMCustomMinutes, seconds instead of minutes, for the NAS
+# ad-hoc test interval. Capped at 600 (10 min) - anything looser than that is
+# really a "sample and chart it" job like Start-PMMonitor.ps1, not a live
+# console loop someone is watching in real time.
+function Read-PMCustomSeconds {
+    while ($true) {
+        Write-Host ''
+        $raw = Read-Host '  Interval in seconds (1-600, blank to cancel)'
+        if ([string]::IsNullOrWhiteSpace($raw)) { return 0 }
+
+        $value = 0
+        if ([int]::TryParse($raw.Trim(), [ref]$value) -and $value -ge 1 -and $value -le 600) { return $value }
+        Write-Host '  Please enter a whole number between 1 and 600.' -ForegroundColor Yellow
     }
 }
 
@@ -448,6 +464,316 @@ function Show-PMArcGISMenu {
     }
 }
 
+# ---------------------------------------------------------------------
+# NAS / SMB connectivity testing
+#   Two different jobs live under one menu entry: running the *configured*
+#   SmbConnectivity.Targets through the normal SMBCONN check (same as any
+#   other check - lands in the HTML report), and an ad-hoc console-only test
+#   against a path typed in right now, optionally as a different user,
+#   optionally repeated on an interval. The ad-hoc path never touches
+#   Config\settings.json and never writes to the report - it exists for
+#   "is this share reachable right now" during troubleshooting, not for
+#   the assessment record.
+# ---------------------------------------------------------------------
+
+# Credentials are asked for only when a share path was actually given - the
+# port test never authenticates, so a username/password would do nothing for
+# a port-only test and asking for one anyway would just be confusing.
+function Read-PMSmbCredential {
+    Write-Host ''
+    $user = Read-Host '  Username to authenticate as (blank = current account)'
+    if ([string]::IsNullOrWhiteSpace($user)) { return $null }
+
+    Write-Host '  Password is used once for this test only - never saved.' -ForegroundColor DarkGray
+    $secure = Read-Host '  Password' -AsSecureString
+    if (-not $secure -or $secure.Length -eq 0) { return $null }
+    return New-Object System.Management.Automation.PSCredential($user.Trim(), $secure)
+}
+
+function Read-PMAdHocSmbTarget {
+    Write-Host ''
+    Write-Host '  Test a custom path' -ForegroundColor Cyan
+    $server = Read-Host '  NAS server - hostname or IP (blank to cancel)'
+    if ([string]::IsNullOrWhiteSpace($server)) { return $null }
+    $server = $server.Trim()
+
+    $portRaw = Read-Host '  Port [445]'
+    $port = 445
+    if (-not [string]::IsNullOrWhiteSpace($portRaw)) {
+        $parsed = 0
+        if ([int]::TryParse($portRaw.Trim(), [ref]$parsed) -and $parsed -gt 0 -and $parsed -le 65535) { $port = $parsed }
+        else { Write-Host '  Invalid port - using 445.' -ForegroundColor Yellow }
+    }
+
+    $share = (Read-Host ('  Share path to test, e.g. \\{0}\share (blank = port only)' -f $server)).Trim()
+
+    $cred = $null
+    if (-not [string]::IsNullOrWhiteSpace($share)) { $cred = Read-PMSmbCredential }
+
+    return [pscustomobject]@{ Server = $server; Port = $port; SharePath = $share; Credential = $cred }
+}
+
+# Returns @{ IntervalSeconds; DurationMinutes }, or $null for a single pass.
+function Read-PMTestSchedule {
+    Write-Host ''
+    Write-Host '  Test once, or repeatedly over time?' -ForegroundColor Cyan
+    Write-PMMenuOption -Key '1' -Text 'Once' -Default
+    Write-PMMenuOption -Key '2' -Text 'Repeatedly...'
+    Write-Host ''
+    $c = Read-Host '  Choice [1]'
+    if ([string]::IsNullOrWhiteSpace($c)) { $c = '1' }
+    if ($c.Trim() -ne '2') { return $null }
+
+    Write-Host ''
+    Write-Host '  How often?' -ForegroundColor Cyan
+    Write-PMMenuOption -Key '1' -Text 'Every 5 seconds'
+    Write-PMMenuOption -Key '2' -Text 'Every 10 seconds' -Default
+    Write-PMMenuOption -Key '3' -Text 'Every 30 seconds'
+    Write-PMMenuOption -Key '4' -Text 'Custom interval...'
+    Write-Host ''
+    $ic = Read-Host '  Choice [2]'
+    if ([string]::IsNullOrWhiteSpace($ic)) { $ic = '2' }
+    $interval = switch ($ic.Trim()) {
+        '1' { 5 }
+        '3' { 30 }
+        '4' { Read-PMCustomSeconds }
+        default { 10 }
+    }
+    if ($interval -le 0) { return $null }
+
+    Write-Host ''
+    Write-Host '  For how long?' -ForegroundColor Cyan
+    Write-PMMenuOption -Key '1' -Text '1 minute'
+    Write-PMMenuOption -Key '2' -Text '5 minutes' -Default
+    Write-PMMenuOption -Key '3' -Text '10 minutes'
+    Write-PMMenuOption -Key '4' -Text 'Custom duration...'
+    Write-Host ''
+    $dc = Read-Host '  Choice [2]'
+    if ([string]::IsNullOrWhiteSpace($dc)) { $dc = '2' }
+    $duration = switch ($dc.Trim()) {
+        '1' { 1 }
+        '3' { 10 }
+        '4' { Read-PMCustomMinutes }
+        default { 5 }
+    }
+    if ($duration -le 0) { return $null }
+
+    return @{ IntervalSeconds = $interval; DurationMinutes = $duration }
+}
+
+function Test-PMAdHocSmbOnce {
+    param([Parameter(Mandatory)][object]$Target, [int]$TimeoutMs = 1500)
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $portOk = Test-PMSmbPort -ComputerName $Target.Server -Port $Target.Port -TimeoutMs $TimeoutMs
+    $sw.Stop()
+    $latency = if ($portOk) { [int]$sw.ElapsedMilliseconds } else { $null }
+
+    # Auth (if any) already happened once, up front, in Invoke-PMAdHocSmbRun -
+    # this just re-checks the path each tick over that same session, exactly
+    # like testing as the current account needs no mapping at all.
+    $shareOk = $null
+    if ($portOk -and -not [string]::IsNullOrWhiteSpace($Target.SharePath)) {
+        try { $shareOk = [bool](Test-Path -LiteralPath $Target.SharePath -ErrorAction Stop) }
+        catch { $shareOk = $false }
+    }
+
+    return [pscustomobject]@{ PortOk = $portOk; ShareOk = $shareOk; LatencyMs = $latency }
+}
+
+function Write-PMAdHocResult {
+    param([Parameter(Mandatory)][object]$Target, [Parameter(Mandatory)][object]$Result)
+
+    Write-Host ''
+    if (-not $Result.PortOk) {
+        Write-Host ('  Port {0}: UNREACHABLE' -f $Target.Port) -ForegroundColor Red
+        return
+    }
+    Write-Host ('  Port {0}: reachable ({1} ms)' -f $Target.Port, $Result.LatencyMs) -ForegroundColor Green
+    if ($null -ne $Result.ShareOk) {
+        if ($Result.ShareOk) { Write-Host ('  Share {0}: accessible' -f $Target.SharePath) -ForegroundColor Green }
+        else                 { Write-Host ('  Share {0}: NOT accessible' -f $Target.SharePath) -ForegroundColor Red }
+    }
+}
+
+function Write-PMAdHocTick {
+    param([Parameter(Mandatory)][string]$Stamp, [Parameter(Mandatory)][object]$Target, [Parameter(Mandatory)][object]$Result)
+
+    if (-not $Result.PortOk) {
+        Write-Host ("  [{0}] FAIL - port {1} unreachable" -f $Stamp, $Target.Port) -ForegroundColor Red
+    }
+    elseif ($null -ne $Result.ShareOk -and -not $Result.ShareOk) {
+        Write-Host ("  [{0}] FAIL - share not accessible ({1} ms port)" -f $Stamp, $Result.LatencyMs) -ForegroundColor Red
+    }
+    else {
+        Write-Host ("  [{0}] OK   - {1} ms" -f $Stamp, $Result.LatencyMs) -ForegroundColor Green
+    }
+}
+
+# Anchors each tick to the clock rather than sleeping a fixed amount, same
+# reasoning as Start-PMMonitor.ps1's sampling loop - so the time a slow tick
+# takes does not make the series drift past the requested duration. Ctrl+C
+# still prints the summary for whatever ran before it, via the same
+# try/finally shape Start-PMMonitor.ps1 uses to keep partial results.
+function Start-PMAdHocSmbLoop {
+    param([Parameter(Mandatory)][object]$Target, [Parameter(Mandatory)][int]$IntervalSeconds, [Parameter(Mandatory)][int]$DurationMinutes)
+
+    $endAt     = (Get-Date).AddMinutes($DurationMinutes)
+    $attempt   = 0
+    $success   = 0
+    $latencies = New-Object System.Collections.Generic.List[double]
+
+    Write-Host ''
+    Write-Host ("  Testing every {0}s until about {1}. Ctrl+C to stop early and still see the summary." -f `
+        $IntervalSeconds, $endAt.ToString('HH:mm:ss')) -ForegroundColor DarkGray
+    Write-Host ''
+
+    try {
+        while ((Get-Date) -lt $endAt) {
+            $tickStart = Get-Date
+            $result    = Test-PMAdHocSmbOnce -Target $Target
+            $attempt++
+
+            $ok = $result.PortOk -and ($null -eq $result.ShareOk -or $result.ShareOk)
+            if ($ok) { $latencies.Add([double]$result.LatencyMs) | Out-Null; $success++ }
+            Write-PMAdHocTick -Stamp $tickStart.ToString('HH:mm:ss') -Target $Target -Result $result
+
+            $remaining = $IntervalSeconds - ((Get-Date) - $tickStart).TotalSeconds
+            if ($remaining -gt 0) {
+                if ((Get-Date).AddSeconds($remaining) -ge $endAt) { break }
+                Start-Sleep -Milliseconds ([int]($remaining * 1000))
+            }
+        }
+    }
+    finally {
+        Write-Host ''
+        if ($attempt -eq 0) {
+            Write-Host '  No attempts completed.' -ForegroundColor Yellow
+        }
+        else {
+            $rate  = [math]::Round(($success / $attempt) * 100, 1)
+            $color = if ($success -eq $attempt) { 'Green' } else { 'Yellow' }
+            Write-Host ("  {0}/{1} succeeded ({2}%)" -f $success, $attempt, $rate) -ForegroundColor $color
+            if ($latencies.Count -gt 0) {
+                $avg = [math]::Round(($latencies | Measure-Object -Average).Average, 0)
+                $min = [math]::Round(($latencies | Measure-Object -Minimum).Minimum, 0)
+                $max = [math]::Round(($latencies | Measure-Object -Maximum).Maximum, 0)
+                Write-Host ("  Latency avg {0} ms, min {1} ms, max {2} ms" -f $avg, $min, $max) -ForegroundColor DarkGray
+            }
+        }
+    }
+}
+
+# Authenticates once (if credentials were given) rather than per tick: on a
+# 10 s interval a 10-minute repeat test is 60 attempts, and re-authenticating
+# every single one is both slow and, with the wrong password, a fast way to
+# trip an account lockout policy. One mapping up front, reused by every
+# Test-Path call in the loop, removed once at the end - same "leaves nothing
+# behind" rule the SMBCONN check itself follows.
+function Invoke-PMAdHocSmbRun {
+    param(
+        [Parameter(Mandatory)][object]$Target,
+        [int]$IntervalSeconds = 0,
+        [int]$DurationMinutes = 0
+    )
+
+    $needsAuth = ($null -ne $Target.Credential) -and (-not [string]::IsNullOrWhiteSpace($Target.SharePath))
+    $mapped    = $false
+
+    if ($needsAuth) {
+        Write-Host ''
+        Write-Host ('  Authenticating to {0} as {1}...' -f $Target.Server, $Target.Credential.UserName) -ForegroundColor DarkGray
+        try {
+            New-SmbMapping -RemotePath $Target.SharePath -Credential $Target.Credential -Persistent $false -ErrorAction Stop | Out-Null
+            $mapped = $true
+            Write-Host '  Authenticated.' -ForegroundColor Green
+        }
+        catch {
+            Write-Host ('  Authentication FAILED: {0}' -f $_.Exception.Message) -ForegroundColor Red
+            Write-Host ''
+            Read-Host '  Press Enter to continue' | Out-Null
+            return
+        }
+    }
+
+    try {
+        if ($IntervalSeconds -gt 0 -and $DurationMinutes -gt 0) {
+            Start-PMAdHocSmbLoop -Target $Target -IntervalSeconds $IntervalSeconds -DurationMinutes $DurationMinutes
+        }
+        else {
+            $result = Test-PMAdHocSmbOnce -Target $Target
+            Write-PMAdHocResult -Target $Target -Result $result
+        }
+    }
+    finally {
+        if ($mapped) { Remove-SmbMapping -RemotePath $Target.SharePath -Force -Confirm:$false -ErrorAction SilentlyContinue }
+    }
+
+    Write-Host ''
+    Read-Host '  Press Enter to continue' | Out-Null
+}
+
+function Show-PMNasTestMenu {
+    while ($true) {
+        Clear-Host
+        Write-PMRule
+        Write-Host '  Test NAS / SMB connectivity' -ForegroundColor Cyan
+        Write-PMRule
+        Write-Host ''
+
+        # Read fresh each pass, same reasoning as $agsHint on the main screen.
+        $smbTargets = @(Get-PMSetting -Path 'SmbConnectivity.Targets' -Default @())
+        if ($smbTargets.Count -gt 0) {
+            Write-Host ('  Configured targets: {0}' -f $smbTargets.Count) -ForegroundColor Green
+        }
+        else {
+            Write-Host '  Configured targets: none (Config\settings.json, SmbConnectivity.Targets)' -ForegroundColor Yellow
+        }
+        Write-Host ''
+
+        if ($smbTargets.Count -gt 0) {
+            Write-PMMenuOption -Key '1' -Text 'Test configured targets now (adds to the HTML report)' -Default
+        }
+        Write-PMMenuOption -Key '2' -Text 'Test a custom path now (console only, nothing saved)'
+        Write-Host ''
+        Write-PMMenuOption -Key 'B' -Text 'Back to the main menu'
+        Write-Host ''
+
+        $default = if ($smbTargets.Count -gt 0) { '1' } else { '2' }
+        $c = Read-Host ('  Choice [{0}]' -f $default)
+        if ([string]::IsNullOrWhiteSpace($c)) { $c = $default }
+
+        switch ($c.Trim().ToUpper()) {
+            '1' {
+                if ($smbTargets.Count -gt 0) {
+                    & (Join-Path $PMRoot 'Start-PMCheck.ps1') -Only SMBCONN -OutputRoot $OutputRoot -ConfigDir $ConfigDir -OpenReport
+                    exit $LASTEXITCODE
+                }
+                else {
+                    Write-Host ''
+                    Write-Host '  Not a valid choice.' -ForegroundColor Yellow
+                    Start-Sleep -Seconds 1
+                }
+            }
+            '2' {
+                $target = Read-PMAdHocSmbTarget
+                if ($null -ne $target) {
+                    $schedule = Read-PMTestSchedule
+                    if ($null -eq $schedule) { Invoke-PMAdHocSmbRun -Target $target }
+                    else { Invoke-PMAdHocSmbRun -Target $target -IntervalSeconds $schedule.IntervalSeconds -DurationMinutes $schedule.DurationMinutes }
+                }
+            }
+            'B' { return }
+            ''  { return }
+            default {
+                Write-Host ''
+                Write-Host '  Not a valid choice.' -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+}
+
 # --- what to check -----------------------------------------------------------
 # A server is either a plain Windows Server with nothing to do with ArcGIS, or
 # a GIS server where the ArcGIS checks are the point - never a useful mix of
@@ -498,11 +824,22 @@ while (-not $ready) {
         }
         catch { $agsHint = '(saved, but unreadable here)' }
 
+        # SmbConnectivity.Targets has no wizard of its own - it is a plain
+        # array in Config\settings.json, not a credential that needs DPAPI
+        # storage like the ArcGIS connection - so the hint just reflects
+        # whatever is already there.
+        $smbTargets = @(Get-PMSetting -Path 'SmbConnectivity.Targets' -Default @())
+        if ($smbTargets.Count -gt 0) { $smbHint = ('({0} target(s) configured)' -f $smbTargets.Count) }
+        else                         { $smbHint = '(not configured)' }
+
         Write-Host '  What do you want to check?'
         Write-Host ''
         Write-PMMenuOption -Key '1' -Text 'Server - the regular maintenance checks' -Default
         Write-PMMenuOption -Key '2' -Text 'ArcGIS Server - site, services, usage reports  ' -NoNewline
         Write-Host $agsHint -ForegroundColor DarkGray
+        Write-Host ''
+        Write-PMMenuOption -Key '3' -Text 'Test NAS / SMB connectivity                     ' -NoNewline
+        Write-Host $smbHint -ForegroundColor DarkGray
         Write-Host ''
         Write-PMMenuOption -Key 'A' -Text 'ArcGIS Server connection...'
         Write-Host ''
@@ -528,6 +865,7 @@ while (-not $ready) {
                     $mode = 'ArcGIS'
                 }
             }
+            '3' { Show-PMNasTestMenu }
             'A' { Show-PMArcGISMenu }
             'Q' { Write-Host ''; Write-Host '  Cancelled.'; Write-Host ''; exit 0 }
             default {

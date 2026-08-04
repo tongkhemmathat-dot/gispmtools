@@ -156,7 +156,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <p>PMtools ตรวจสถานะเครื่องแม่ข่าย Windows ทุกหัวข้อที่ควรรู้ในการบำรุงรักษาเชิงป้องกัน
 แล้วสร้างไฟล์รายงาน HTML ภาษาไทยคู่อังกฤษ ที่จัดหน้าเรียบร้อยพอจะส่งให้ผู้บริหารหรือแนบหนังสือราชการได้โดยตรง</p>
 
-<p>ใช้เวลาทั้งหมด <strong>ประมาณ 10 วินาที</strong> ตรวจ 14 หัวข้อ ตั้งแต่พื้นที่ดิสก์ หน่วยความจำ บริการที่หยุดทำงาน
+<p>ใช้เวลาทั้งหมด <strong>ประมาณ 10 วินาที</strong> ตรวจ 15 หัวข้อ ตั้งแต่พื้นที่ดิสก์ หน่วยความจำ บริการที่หยุดทำงาน
 บันทึกเหตุการณ์ผิดพลาด ใบรับรองที่ใกล้หมดอายุ ไปจนถึงสถานะการสำรองข้อมูล</p>
 
 <h3>สิ่งที่ได้เมื่อรันเสร็จ</h3>
@@ -196,7 +196,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <li><strong>ไม่รีสตาร์ทเครื่อง</strong> และไม่สั่งอะไรที่ทำให้บริการสะดุด</li>
 </ul>
 
-<h3>เจ็ดหัวข้อที่ปิดไว้เป็นค่าเริ่มต้น</h3>
+<h3>แปดหัวข้อที่ปิดไว้เป็นค่าเริ่มต้น</h3>
 <p>เป็นหัวข้อที่ต้องติดต่อออกนอกเครื่อง จึงปิดไว้ก่อนเพื่อความปลอดภัย</p>
 
 <div class="tablewrap">
@@ -207,6 +207,8 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
         <td>ใช้เวลานานมาก และค้างได้บนเครือข่ายปิด ทดสอบแล้วค้างเกิน 10 นาที</td><td class="mono">-Only WU</td></tr>
     <tr><td class="mono">CONN</td><td>ทดสอบ ping ไปยังเกตเวย์และเซิร์ฟเวอร์ชื่อโดเมนทุกตัว</td>
         <td>ถ้าหน่วยงานมีอุปกรณ์ IPS/IDS อาจมองว่าเป็นการสแกนแล้วบล็อกเครื่อง</td><td class="mono">-Only CONN</td></tr>
+    <tr><td class="mono">SMBCONN</td><td>ทดสอบเชื่อมต่อพอร์ต 445 และเปิดอ่าน share ของ NAS ที่ตั้งค่าไว้ใน <code>SmbConnectivity.Targets</code></td>
+        <td>ติดต่อออกนอกเครื่องจริง เหตุผลเดียวกับ <span class="mono">CONN</span> และไม่มีปลายทางให้รู้ล่วงหน้า ต้องตั้งค่าเอง</td><td class="mono">-Only SMBCONN</td></tr>
     <tr><td class="mono">AGS</td><td>ตรวจ ArcGIS Server ผ่าน Administrator API — ดู<a href="#s10">หัวข้อที่ 10</a></td>
         <td>ต้องเชื่อมต่อไปยัง ArcGIS Server และต้องตั้งค่าการเชื่อมต่อก่อนใช้งาน</td><td class="mono">-Only AGS</td></tr>
     <tr><td class="mono">AGSSVC</td><td>ตรวจบริการแผนที่บน ArcGIS Server — ดู<a href="#s10">หัวข้อที่ 10</a></td>
@@ -221,7 +223,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 </table>
 </div>
 
-<p>อีก 14 หัวข้อที่เหลือเป็นการอ่านค่าในเครื่องล้วน ๆ <strong>ไม่ส่งแพ็กเก็ตออกนอกเครื่องเลยแม้แต่แพ็กเก็ตเดียว</strong></p>
+<p>อีก 15 หัวข้อที่เหลือเป็นการอ่านค่าในเครื่องล้วน ๆ <strong>ไม่ส่งแพ็กเก็ตออกนอกเครื่องเลยแม้แต่แพ็กเก็ตเดียว</strong></p>
 </section>
 
 <!-- 3 -->
@@ -232,7 +234,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <li>
     <div class="h">คัดลอกโฟลเดอร์ไปวางบนเครื่องแม่ข่าย</div>
     <p>คัดลอกโฟลเดอร์ <code>PMtools</code> ทั้งโฟลเดอร์ ไม่ต้องแยกไฟล์ วางที่ไหนก็ได้ที่เขียนไฟล์ได้ เช่น <code>D:\PMtools</code></p>
-    <p>ถ้าได้มาเป็น<strong>ไฟล์เดียว</strong>ชื่อ <span class="mono">PMtools-1.7.8.cmd</span> ให้ข้ามไป<a href="#s4">หัวข้อที่ 4</a> แทน</p>
+    <p>ถ้าได้มาเป็น<strong>ไฟล์เดียว</strong>ชื่อ <span class="mono">PMtools-1.7.9.cmd</span> ให้ข้ามไป<a href="#s4">หัวข้อที่ 4</a> แทน</p>
   </li>
   <li>
     <div class="h">แก้ชื่อหน่วยงาน (ทำครั้งเดียว)</div>
@@ -284,7 +286,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
   <tbody>
     <tr><td>โฟลเดอร์ <span class="mono">PMtools</span> ที่มีไฟล์หลายสิบไฟล์</td>
         <td>ดับเบิลคลิก <span class="mono">Run-PM.cmd</span> ตาม<a href="#s3">หัวข้อที่ 3</a></td></tr>
-    <tr><td>ไฟล์เดียวชื่อ <span class="mono">PMtools-1.7.8.cmd</span></td>
+    <tr><td>ไฟล์เดียวชื่อ <span class="mono">PMtools-1.7.9.cmd</span></td>
         <td>ดับเบิลคลิกไฟล์นั้นได้เลย ไม่ต้องมีอะไรอยู่ข้าง ๆ</td></tr>
   </tbody>
 </table>
@@ -322,7 +324,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <p>โฟลเดอร์รายงานจะโผล่ <strong>ข้างตัวไฟล์โดยตรง</strong> วางไฟล์ไว้ที่ไหน รายงานก็อยู่ตรงนั้น</p>
 
 <pre><code>D:\ตรวจเครื่อง\
-    PMtools-1.7.8.cmd
+    PMtools-1.7.9.cmd
     SRV-APP01_20260722-1305\      &lt;- รอบนี้
         PM-Report-SRV-APP01_20260722-1305.html
         PM-Report-SRV-APP01_20260722-1305.json
@@ -343,7 +345,7 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 <p>ค่าตั้งต้นทั้งหมดถูกฝังอยู่ในไฟล์ ถ้าต้องการแก้ ให้ดึงออกมาก่อนหนึ่งครั้ง
 โดยเปิด Command Prompt ที่โฟลเดอร์นั้นแล้วสั่ง</p>
 
-<pre><code>PMtools-1.7.8.cmd -ExtractConfig</code></pre>
+<pre><code>PMtools-1.7.9.cmd -ExtractConfig</code></pre>
 
 <p>จะได้โฟลเดอร์ <span class="mono">Config\</span> ออกมาวางข้างไฟล์ แก้ <span class="mono">settings.json</span>
 ด้วย Notepad ตาม<a href="#s11">หัวข้อที่ 11</a> ได้เลย รอบถัดไปเครื่องมือจะหยิบค่าที่แก้ไว้ไปใช้เอง
@@ -359,9 +361,9 @@ footer{color:var(--faint); font-size:13px; text-align:center; padding:8px 0 0}
 
 <p>ใช้สวิตช์ชุดเดียวกับ<a href="#s12">หัวข้อที่ 12</a> ได้ทั้งหมด เพียงเรียกผ่านชื่อไฟล์นี้แทน</p>
 
-<pre><code>PMtools-1.7.8.cmd -Only DISK,CERT
-PMtools-1.7.8.cmd -Skip EVT
-PMtools-1.7.8.cmd -MonitorMinutes 30</code></pre>
+<pre><code>PMtools-1.7.9.cmd -Only DISK,CERT
+PMtools-1.7.9.cmd -Skip EVT
+PMtools-1.7.9.cmd -MonitorMinutes 30</code></pre>
 
 <div class="callout c-ok">
   <div class="t">ยังอ่านค่าอย่างเดียวเหมือนเดิมทุกประการ</div>
@@ -448,7 +450,7 @@ PMtools-1.7.8.cmd -MonitorMinutes 30</code></pre>
 และหลายเครื่องต้องการแค่รายละเอียด Server เท่านั้น</p>
 
 <pre><code>==============================================================
-  PMtools 1.7.8 - Preventive Maintenance
+  PMtools 1.7.9 - Preventive Maintenance
   Server: SRV-APP01      2026-07-22 11:15
 ==============================================================
 
@@ -456,6 +458,7 @@ PMtools-1.7.8.cmd -MonitorMinutes 30</code></pre>
 
    [1]  Server - the regular maintenance checks
    [2]  ArcGIS Server - site, services, usage reports  (not configured)
+   [3]  Test NAS / SMB connectivity                     (not configured)
 
    [A]  ArcGIS Server connection...
 
@@ -469,6 +472,7 @@ PMtools-1.7.8.cmd -MonitorMinutes 30</code></pre>
   <tbody>
     <tr><td class="mono">1</td><td>ตรวจเครื่องแม่ข่ายตามปกติ — ไปต่อที่หน้าเลือกเวลาเก็บข้อมูลด้านล่าง <strong>กด Enter เฉย ๆ ก็ได้ตัวเลือกนี้</strong></td></tr>
     <tr><td class="mono">2</td><td>ตรวจ ArcGIS Server เท่านั้น — ตรวจทันทีโดยไม่มีขั้นตอนเก็บข้อมูล ถ้ายังไม่เคยตั้งค่าการเชื่อมต่อ เมนูจะพาไปตั้งค่าให้ก่อน (ดู<a href="#s10">หัวข้อที่ 10</a>)</td></tr>
+    <tr><td class="mono">3</td><td>ตรวจเฉพาะหัวข้อ <span class="mono">SMBCONN</span> (ทดสอบพอร์ต 445 + เปิดอ่าน share ของ NAS) — ตรวจทันทีไม่มีขั้นตอนเก็บข้อมูล ถ้ายังไม่เคยตั้งค่าปลายทางเลย เมนูจะบอกวิธีเพิ่มใน <code>Config\settings.json</code> หัวข้อ <span class="mono">SmbConnectivity.Targets</span> แล้วพากลับมาหน้าเดิม</td></tr>
     <tr><td class="mono">A</td><td>ตั้งค่า/ทดสอบ/ลบการเชื่อมต่อ ArcGIS Server โดยไม่ต้องตรวจก่อน</td></tr>
     <tr><td class="mono">Q</td><td>ออกโดยไม่ทำอะไร</td></tr>
   </tbody>
@@ -479,7 +483,7 @@ PMtools-1.7.8.cmd -MonitorMinutes 30</code></pre>
 เพียงเพิ่มปุ่ม <code>[B] Back</code> ให้ย้อนกลับไปหน้าเลือก Server/ArcGIS ได้</p>
 
 <pre><code>==============================================================
-  PMtools 1.7.8 - Preventive Maintenance
+  PMtools 1.7.9 - Preventive Maintenance
   Server: SRV-APP01      2026-07-22 11:15
 ==============================================================
 
@@ -635,6 +639,7 @@ PMtools-1.7.8.cmd -MonitorMinutes 30</code></pre>
     <tr><td class="mono">PROC</td><td>โปรเซสที่ใช้ทรัพยากรสูงสุด 10 อันดับ</td><td>ข้อมูลประกอบ ไม่มีเกณฑ์</td></tr>
     <tr><td class="mono">SVC</td><td>สถานะบริการของระบบ</td><td>บริการที่ตั้งเริ่มอัตโนมัติแต่หยุดอยู่ หรือบริการในรายการเฝ้าระวังที่หยุด</td></tr>
     <tr><td class="mono">EVT</td><td>บันทึกเหตุการณ์ของระบบ</td><td>มีเหตุการณ์ระดับผิดพลาดหรือวิกฤตในช่วง 7 วัน</td></tr>
+    <tr><td class="mono">SMB</td><td>บันทึกเหตุการณ์ SMB Client (Microsoft-Windows-SmbClient/Connectivity)</td><td>มีเหตุการณ์ระดับวิกฤต ผิดพลาด หรือเฝ้าระวังในช่วง 7 วัน (การขาดการเชื่อมต่อ/หมดเวลาเชื่อมต่อกับ share)</td></tr>
     <tr><td class="mono">HOTFIX</td><td>ประวัติการติดตั้งรายการปรับปรุง</td><td>ไม่ได้ติดตั้งรายการปรับปรุงเกิน 60 วัน</td></tr>
     <tr><td class="mono">AV</td><td>ระบบป้องกันไวรัสและมัลแวร์</td><td>ปิดการป้องกันแบบเรียลไทม์ หรือฐานข้อมูลไวรัสเก่าเกิน 3 วัน</td></tr>
     <tr><td class="mono">BACKUP</td><td>การสำรองข้อมูล</td><td>สำรองล่าสุดเกิน 7 วัน หรือพบรายการที่ล้มเหลว</td></tr>
@@ -643,6 +648,7 @@ PMtools-1.7.8.cmd -MonitorMinutes 30</code></pre>
     <tr><td class="mono">NET</td><td>อุปกรณ์เครือข่ายและการตั้งค่า</td><td>ไม่มีการ์ดใดกำหนดเกตเวย์หรือ DNS เลย</td></tr>
     <tr><td class="mono">REBOOT</td><td>สถานะการรอเริ่มระบบใหม่</td><td>มีรายการค้างรอการรีสตาร์ท</td></tr>
     <tr><td class="mono">CONN</td><td>การเชื่อมต่อเครือข่าย</td><td>ping ไม่ผ่าน — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
+    <tr><td class="mono">SMBCONN</td><td>การเชื่อมต่อ NAS/SMB (พอร์ต 445 + เปิดอ่าน share ที่ตั้งค่าไว้)</td><td>เชื่อมต่อพอร์ตไม่ได้ หรือเข้าถึง share ไม่ได้ — <strong>ปิดไว้เป็นค่าเริ่มต้น ต้องตั้งค่าปลายทางก่อน</strong></td></tr>
     <tr><td class="mono">WU</td><td>รายการปรับปรุงที่ค้างติดตั้ง</td><td>มีรายการค้าง — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
     <tr><td class="mono">AGS</td><td>สถานะไซต์ ArcGIS Server (เวอร์ชัน + เครื่องในไซต์ + OS/CPU/RAM แยกบรรทัดต่อเครื่อง)</td><td>เครื่องในไซต์ไม่ทำงาน — <strong>ปิดไว้เป็นค่าเริ่มต้น ต้องตั้งค่าการเชื่อมต่อก่อน</strong> ดู<a href="#s10">หัวข้อที่ 10</a></td></tr>
     <tr><td class="mono">AGSSVC</td><td>บริการแผนที่: สถานะ อินสแตนซ์ จำนวนคำขอ</td><td>บริการที่ควรทำงานแต่หยุด — <strong>ปิดไว้เป็นค่าเริ่มต้น</strong></td></tr>
@@ -984,7 +990,7 @@ ArcGIS Server และต้อง<strong>ตั้งค่าการเช�
 </section>
 
 <footer>
-  คู่มือการใช้งาน PMtools เวอร์ชัน 1.7.8
+  คู่มือการใช้งาน PMtools เวอร์ชัน 1.7.9
 </footer>
 
 </div>
