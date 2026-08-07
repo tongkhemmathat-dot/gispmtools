@@ -1,6 +1,6 @@
-﻿# บันทึกส่งงาน PMtools — ทำต่อหลังวันที่ 4 สิงหาคม 2569
+﻿# บันทึกส่งงาน PMtools — ทำต่อหลังวันที่ 7 สิงหาคม 2569
 
-สรุป ณ วันที่ 4 สิงหาคม 2569 (อัปเดตหลังออก v1.7.9) สำหรับใช้ทำงานต่อ
+สรุป ณ วันที่ 7 สิงหาคม 2569 (อัปเดตหลังออก v1.7.12) สำหรับใช้ทำงานต่อ
 
 ไฟล์นี้เก็บ **สถานะงานและสิ่งที่ค้าง** ส่วนวิธีใช้งานอยู่ใน [README.md](../README.md)
 และเอกสารที่ README.md ชี้ไปต่อ (ทั้งหมดอยู่ในโฟลเดอร์นี้ `docs/`: USAGE.md, DISTRIBUTION.md,
@@ -14,10 +14,57 @@ CHECKS.md, TECHNICAL.md)
 
 เครื่องมืออยู่ที่ `D:\PMtools` ขึ้น GitHub แล้วที่
 [tongkhemmathat-dot/gispmtools](https://github.com/tongkhemmathat-dot/gispmtools) (private)
-**push ครบทุก commit แล้ว ไม่มีอะไรค้างใน working tree — รุ่นล่าสุดที่ออกคือ v1.7.9**
+**รุ่นล่าสุดที่ออกคือ v1.7.12**
 
-มี **23 หัวข้อตรวจ** โดย 15 หัวข้อรันเป็นค่าเริ่มต้น ใช้เวลาราว 7-8 วินาที
-อีก 8 หัวข้อปิดไว้ (`WU`, `CONN`, `SMBCONN`, `AGS`, `AGSSVC`, `AGSUSAGE`, `AGSDATA`, `AGSLOG`)
+มี **24 หัวข้อตรวจ** โดย 15 หัวข้อรันเป็นค่าเริ่มต้น ใช้เวลาราว 7-8 วินาที
+อีก 9 หัวข้อปิดไว้ (`WU`, `CONN`, `SMBCONN`, `AGS`, `AGSSVC`, `AGSUSAGE`, `AGSDATA`, `AGSLOG`, `AGSWORKSPACE`)
+
+เพิ่ม `AGSWORKSPACE` (เวอร์ชันอัตโนมัติของหน้า **Service Workspaces** ใน ArcGIS Server Manager -
+จัดทุกบริการเข้าสามหมวด Referenced/Replaced/Copied ตามศัพท์ Esri เอง) เข้าไปแทนที่ในเมนู `[3]`
+(รันเฉพาะ `AGSSVC`+`AGSDATA`+`AGSWORKSPACE`) เข้าใจผิดตอนแรกว่าผู้ใช้ไม่ต้องการจับคู่กับ data store
+ที่ลงทะเบียนไว้เลย (ตัด `data/findItems` ออกทั้งหมดรอบแรก) แต่ผู้ใช้ตามมาขอ**เทียบรายละเอียดภายใน
+(server/instance/database/user) กับของที่ลงทะเบียนไว้**จริง ๆ จึงเพิ่มกลับมาเป็นคอลัมน์ "Data Store
+ที่ลงทะเบียนตรงกัน" (name lookup อย่างเดียว ใช้ `Get-PMArcGISDatabaseKey`/`Get-PMArcGISPathKey`/
+`Test-PMArcGISPathMatch` ใน `Lib\ArcGIS.ps1` แบบเดียวกับที่ `AGSIMPACT` เคยใช้ แต่**ไม่มี**
+BREAK/LOW/ORPHAN, ไม่เทียบ `computeRefCount`, ไม่มีตารางสรุปต่อ data store - เทียบแค่ชื่อ ไม่วิเคราะห์
+ผลกระทบ) พร้อมแยกคอลัมน์ Server/Instance/Database/User ออกจากกัน แทนที่จะรวมเป็นข้อความก้อนเดียว
+เหมือนรอบแรก
+
+**แก้บั๊ก manifest จริง ๆ (7 ส.ค. 2569, รอบที่สอง)** — ทดสอบกับไซต์จริงแล้วพบว่าทุกบริการขึ้น
+"Could not find resource or operation 'manifest' on the system" รวมถึง `SampleWorldCities` ที่มากับ
+ArcGIS Server เอง **สาเหตุจริงคือ path ผิด ไม่ใช่ HTTP method อย่างที่เข้าใจตอนแรก** — ต้องเป็น
+`services/[<folder>/]<name>.<type>/iteminfo/manifest/manifest.json` (เรียกด้วย `GET`) ไม่ใช่
+`.../manifest` เฉย ๆ ยืนยันกับเอกสารทางการของ Esri แล้ว
+([Service Manifest](https://developers.arcgis.com/rest/enterprise-administration/server/servicemanifest.htm))
+ข้อมูลที่เคยบันทึกไว้ด้านล่างว่า "ต้องเรียกด้วย POST เท่านั้น" **ผิด** มาจากข้อมูลที่ผู้ใช้ส่งมาจาก
+Claude session อื่นซึ่งไม่ได้อ้างอิงเอกสาร Esri โดยตรง แก้กลับเป็น `GET` พร้อม path ที่ถูกต้องแล้ว
+
+**v1.7.12** ทดสอบกับไซต์จริงแล้ว (`tags-eudr.info`, ArcGIS Server 11.5) - **ได้ผลจริง 10 จาก 11
+บริการ** ทุกบริการในโฟลเดอร์ `EUDR` ต่อ data store เดียวกัน (`/enterpriseDatabases/eudrdb`, หมวด
+Replaced เพราะ publisher/server คนละเครื่อง) มีแค่ `SampleWorldCities` (บริการตัวอย่างเก่าที่มากับ
+ArcGIS Server เอง) ที่ยังขึ้น UNKNOWN แต่ด้วยเหตุผลที่ต่างไปแล้ว: `"Uploaded content 'manifest.json'
+not found..."` - แปลว่า endpoint ถูกแล้ว แค่บริการนี้ไม่มีไฟล์ manifest ให้อ่านจริง ๆ (เคสที่ชอบธรรม
+ต้องรายงาน UNKNOWN ไม่ใช่บั๊ก) ระหว่างตรวจผลจริงยังเจอ**สัญญาณรบกวนอีกจุด**: `manifest.resources[]`
+มีรายการไฟล์ .msd ของตัวบริการเอง (เก็บใน `arcgissystem\arcgisinput\...\extracted\...` เสมอ) ปนเข้ามา
+เป็น "workspace" ที่สอง ทำให้ทุกแถวมี 2 ค่าใน Server/Instance/Database/User คั่นด้วย "; " ทั้งที่จริง
+มีแค่ connection เดียว - กรองรายการที่ลงท้าย `.msd`/`.mxd`/`.sd` หรืออยู่ใต้ `\arcgissystem\` ออกแล้ว
+
+**v1.7.10 เพิ่ม `AGSIMPACT` แล้วถอดออกอีกครั้งในรุ่นถัดไปโดยคำขอผู้ใช้ - ไม่มีอยู่ในโค้ดปัจจุบัน.**
+สิ่งที่เคยเพิ่ม: หัวข้อ `AGSIMPACT` (ผลกระทบของ data store ต่อบริการแผนที่ — BREAK/LOW/ORPHAN/UNKNOWN,
+จับคู่ manifest ของทุกบริการกับ data store ที่ลงทะเบียน แล้วเทียบกับ `computeRefCount`) และคอลัมน์
+"DB Connection" ท้ายตารางของ `AGSSVC` (อ่าน manifest ของบริการที่แสดงในตารางเท่านั้น) ทั้งสองใช้
+ทรัพยากร manifest ของบริการร่วมกัน ซึ่งตอนนั้นเข้าใจว่าแก้บั๊กสำคัญไปแล้วก่อนถอด: ~~ทรัพยากร manifest
+ต้องเรียกด้วย `POST` เท่านั้น เรียกด้วย `GET` แล้วล้มเหลวเสมอ~~ **(ข้อมูลนี้ผิด — ดูรายการแก้บั๊กจริง
+ด้านบน สาเหตุจริงคือ path ผิด ไม่ใช่ HTTP method)** (พบจากผู้ใช้ทดสอบกับไซต์จริงว่าขึ้น `?` ทุกแถว) -
+เก็บไว้ในบันทึกนี้เผื่อกลับมาทำใหม่ในอนาคต ตรรกะ BREAK/LOW ที่ใช้ตอนนั้นยืนยันแล้วว่าตรงกับเอกสาร Esri
+เรื่อง Service Workspaces (Referenced/Replaced/Copied) และการลงทะเบียนข้อมูล
+(Same Connection / Separate Copy)
+
+**v1.7.11** ถอด `AGSIMPACT` ทั้งหัวข้อ (`Checks\A5-ArcGISDataStoreImpact.ps1`, `Tests\Test-
+ArcGISDataStoreImpact.ps1`), คอลัมน์ "DB Connection" ของ `AGSSVC`, และฟังก์ชันจับคู่ที่ใช้ร่วมกันใน
+`Lib\ArcGIS.ps1` ("Data store / service matching") ออกทั้งหมดตามคำขอผู้ใช้ - เมนู
+`[3] ArcGIS Server - service & database connection` ใน `Show-PMMenu.ps1` ยังอยู่ แต่เปลี่ยนไปรัน
+เฉพาะ `AGSSVC`+`AGSDATA` แทน (ไม่มี `AGSIMPACT` ให้รันแล้ว)
 
 **นับจากรุ่น v1.2.0 ถึง v1.7.4 (ทั้งหมดวันที่ 23 ก.ค. 2569 เดียวกัน) แล้วจึง v1.7.5, v1.7.6, v1.7.7
 (ทั้งสาม 24 ก.ค. 2569) และ v1.7.8 (27 ก.ค. 2569)** เพิ่มเข้ามาตามลำดับ:

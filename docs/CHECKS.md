@@ -31,6 +31,7 @@
 | `AGSUSAGE` | รายงานการใช้งานที่มีอยู่แล้วบนไซต์: คำขอสะสม เวลาตอบสนองสูงสุด คำขอหมดเวลา | คำขอหมดเวลา > 0 — **ปิดไว้เป็นค่าเริ่มต้น ต้องตั้งค่าการเชื่อมต่อก่อน** |
 | `AGSDATA` | การเชื่อมต่อฐานข้อมูลที่ลงทะเบียนไว้กับไซต์ (enterprise geodatabase, file share ฯลฯ) | เชื่อมต่อไม่ได้แม้แต่รายการเดียว — **ปิดไว้เป็นค่าเริ่มต้น ต้องตั้งค่าการเชื่อมต่อก่อน** |
 | `AGSLOG` | บันทึกเหตุการณ์ของ ArcGIS Server ระดับ SEVERE/WARNING ย้อน 7 วัน (สูงสุด 100 รายการต่อระดับ) | พบบันทึกระดับ SEVERE แม้แต่รายการเดียว — **ปิดไว้เป็นค่าเริ่มต้น ต้องตั้งค่าการเชื่อมต่อก่อน** |
+| `AGSWORKSPACE` | Service Workspace ของทุกบริการแผนที่: server/instance/database/user หรือ path ที่แต่ละบริการต่อ, หมวด Referenced/Replaced/Copied ตามศัพท์ ArcGIS Server Manager, และเทียบกับ data store ที่ลงทะเบียนไว้ | อ่าน manifest ของบริการใดไม่ได้ — **ปิดไว้เป็นค่าเริ่มต้น ต้องตั้งค่าการเชื่อมต่อก่อน** |
 
 ---
 
@@ -71,8 +72,8 @@
 ### สั่งรัน
 
 ```powershell
-.\Start-PMCheck.ps1 -Group ArcGIS                                # ครบทั้งห้าหัวข้อ ArcGIS ในคำสั่งเดียว บายพาส Checks.Disabled
-.\Start-PMCheck.ps1 -Only AGS,AGSSVC,AGSUSAGE,AGSDATA,AGSLOG    # เทียบเท่ากัน เจาะจงทีละ id
+.\Start-PMCheck.ps1 -Group ArcGIS                                        # ครบทั้งหกหัวข้อ ArcGIS ในคำสั่งเดียว บายพาส Checks.Disabled
+.\Start-PMCheck.ps1 -Only AGS,AGSSVC,AGSUSAGE,AGSDATA,AGSLOG,AGSWORKSPACE  # เทียบเท่ากัน เจาะจงทีละ id
 ```
 
 **`-Group Server`/`-Group ArcGIS` แยกสองกลุ่มออกจากกันเด็ดขาด** — เมนูหลัก (`Run-PM.cmd`) ก็ถาม
@@ -80,8 +81,8 @@
 ไม่มีเหตุผลต้องตรวจรวมกันในรอบเดียว `-Only` ที่ผสมหัวข้อ Server กับ ArcGIS
 (เช่น `-Only DISK,AGS`) จะถูกปฏิเสธพร้อมข้อความบอกให้รันแยกสองรอบแทน ไม่ว่าจะระบุ `-Group` หรือไม่
 
-หรือลบ `"AGS"`, `"AGSSVC"`, `"AGSUSAGE"`, `"AGSDATA"` และ `"AGSLOG"` ออกจาก `Checks.Disabled` ใน
-`Config\settings.json` เพื่อให้รันทุกครั้ง (ใช้กับการรันแบบไม่ระบุ `-Group`/`-Only` เลย)
+หรือลบ `"AGS"`, `"AGSSVC"`, `"AGSUSAGE"`, `"AGSDATA"`, `"AGSLOG"` และ `"AGSWORKSPACE"` ออกจาก
+`Checks.Disabled` ใน `Config\settings.json` เพื่อให้รันทุกครั้ง (ใช้กับการรันแบบไม่ระบุ `-Group`/`-Only` เลย)
 
 ### `AGS` — สถานะไซต์ (มีรายละเอียดฮาร์ดแวร์เครื่องแนบด้วย)
 
@@ -212,6 +213,46 @@ SEVERE ตัวจริงที่เกิดก่อนหน้าไม�
 > (สิทธิ์บัญชีไม่พอ) แก้โดยตรวจ `$resp.status` เองอีกชั้น และถ้าอ่าน log ไม่ได้เลยทั้งสองระดับ
 > จะขึ้น `WARN` "อ่านบันทึกไม่ได้" แทนที่จะขึ้น `OK` เงียบ ๆ
 
+### `AGSWORKSPACE` — Service Workspace ของบริการแผนที่
+
+เป็นเวอร์ชันอัตโนมัติของหน้า **Service Workspaces** ใน ArcGIS Server Manager เอง (Services ->
+Manage Services -> เลือกบริการ -> Service Workspaces) ซึ่งต้องเปิดทีละบริการ ไม่มีทางดูรวมทั้งไซต์
+ในหน้าเดียว หัวข้อนี้ไล่ทุกบริการ (ข้ามโฟลเดอร์ `System`/`Utilities` และประเภท
+`GeometryServer`/`SearchServer` เหมือน `AGSLOG`) อ่าน
+`GET /services/{folder}/{name}.{type}/iteminfo/manifest/manifest.json` แล้วจัดบริการแต่ละตัวเข้า
+สามหมวดของ Esri เอง:
+
+| หมวด | ความหมาย | เงื่อนไข |
+|---|---|---|
+| **Referenced** | ใช้ข้อมูลเดียวกับตอน publish | `byReference=true` และ path/connection ฝั่ง publisher กับฝั่ง server ตรงกัน (หรือไม่มีข้อมูลฝั่ง publisher ให้เทียบ) |
+| **Replaced** | เส้นทางถูกแทนที่ตอน publish ข้ามเครื่อง | `byReference=true` แต่ path/connection ฝั่ง publisher กับฝั่ง server**ต่างกัน** |
+| **Copied** | คัดลอกข้อมูลขึ้น server ตอน publish แล้ว ไม่ผูกกับต้นทางอีก | `byReference=false` |
+
+แยกรายละเอียดการเชื่อมต่อออกเป็นคอลัมน์ **Server (IP/ชื่อเครื่อง หรือ path), Instance, ฐานข้อมูล,
+บัญชีผู้ใช้** เพื่อเทียบกันได้ทีละช่อง ไม่ใช่รวมเป็นข้อความก้อนเดียว แล้วเทียบกับรายการ data store ที่
+ลงทะเบียนไว้ด้วย `POST /data/findItems` เป็นคอลัมน์ **"Data Store ที่ลงทะเบียนตรงกัน"** — ถ้าเชื่อมต่อ
+ตรงกับ data store ที่ลงทะเบียนไว้จะขึ้น path ของ data store นั้น (เช่น
+`/enterpriseDatabases/AGSDataStore_gisdb`) ถ้าไม่ตรงกับรายการใดเลยขึ้น `-` เป็นวิธีจับบริการที่ต่อ
+ฐานข้อมูลตรง ๆ โดยไม่ผ่านการลงทะเบียนได้ (เช่น เชื่อมเซิร์ฟเวอร์/ฐานข้อมูลคนละตัวจากที่ทีมคาดไว้)
+
+**การจับคู่นี้เป็นแค่ "หา"ชื่อ (name lookup) ไม่ใช่การวิเคราะห์ผลกระทบ** — ไม่มี BREAK/LOW/ORPHAN,
+ไม่เทียบ `computeRefCount`, ไม่มีตารางสรุปรายการ data store ตอบแค่ "บริการนี้ต่อกับอะไร และตรงกับ
+data store ที่ลงทะเบียนไว้ตัวไหนไหม" เท่านั้น ตรงตามหน้า Service Workspaces ของ Manager บวกการเทียบ
+ชื่อเพิ่มเติม ไม่ได้พยายามตอบว่า "ถ้า unregister data store ตัวนี้จะกระทบอะไร" (คำถามนั้นซับซ้อนกว่า
+มากและเคยลองทำเป็นหัวข้อ `AGSIMPACT` มาก่อน แล้วถอดออกตามคำขอผู้ใช้ เพราะเกินความต้องการจริง — ดู
+`docs/HANDOVER.md`)
+
+รันกับ**ทุกบริการบนไซต์ ไม่ตัดจำนวนแบบ `AGSSVC`** เพราะหัวข้อนี้มีไว้ให้เปิดดูเป็นรายการทั้งหมด
+บริการที่หายไปเพราะไม่ติด "top N" จะขัดจุดประสงค์เดิม
+
+ถ้า `manifest.databases[]` และ `manifest.resources[]` ว่างทั้งคู่ จะ fallback ไปอ่าน
+`GET /services/{folder}/{name}.{type}` แล้วดู `properties.path`/`filePath`/`locatorPath`/`cacheDir`
+เหมือนเคสของ ImageServer/mosaic dataset ที่เจอในหัวข้ออื่น (ยังลองจับคู่กับ data store ที่ลงทะเบียน
+ไว้ด้วย path ต่อ) ถ้ายังไม่พบเลยจะขึ้นหมวด "None" (ปกติสำหรับบริการ GP/utility ที่ไม่มี data source
+ของตัวเอง) ถ้าอ่าน manifest ไม่ได้เลยจะขึ้น `WARN` หมวด "Unknown" — **ไม่เคยนับว่าปลอดภัยเมื่ออ่านไม่ได้**
+ถ้าอ่านรายการ data store ที่ลงทะเบียนไว้ไม่ได้เลย (เช่น สิทธิ์บัญชีไม่พอ) คอลัมน์ "Data Store ที่
+ลงทะเบียนตรงกัน" จะยังแสดงแต่เทียบกับอะไรไม่ได้เลย พร้อม finding เตือนไว้
+
 ### ค่าที่ปรับได้ (`Config\settings.json` หัวข้อ `ArcGIS`)
 
 | ค่า | ทำอะไร |
@@ -229,7 +270,16 @@ SEVERE ตัวจริงที่เกิดก่อนหน้าไม�
 ทุกหัวข้อ ArcGIS ใช้ `GET` ยกเว้นสี่จุดที่ต้องเป็น `POST` เพราะ Admin API บังคับ **ไม่ใช่เพราะ
 เขียนอะไร**: `generateToken` (รหัสผ่านต้องเดินทางใน request body), `data/findItems`/
 `data/validateDataItem` ของ `AGSDATA` และ `logs/query` ของ `AGSLOG` (ทั้งสามหลังต้องส่ง
-path/type/filter เป็น JSON ยาวเกินจะใส่ใน query string)
+path/type/filter เป็น JSON ยาวเกินจะใส่ใน query string) — `data/findItems` ที่ `AGSWORKSPACE` ใช้
+ก็เป็น `POST` เพราะเหตุผลเดียวกัน
+
+> **ทรัพยากร manifest ของบริการ (`AGSWORKSPACE`) เป็น `GET` ไม่ใช่ `POST`** — เคยเข้าใจผิดว่าต้องเป็น
+> `POST` (ตามข้อมูลที่ไม่ได้อ้างอิงจากเอกสาร Esri โดยตรง) แล้วแก้ไปทางนั้นก่อน แต่พอทดสอบกับไซต์จริง
+> (7 ส.ค. 2569) กลับล้มเหลวทุกบริการ รวมถึง `SampleWorldCities` ที่มากับ ArcGIS Server เอง ด้วยข้อความ
+> "Could not find resource or operation 'manifest' on the system" — สาเหตุจริงคือ **path ผิด**
+> ไม่ใช่ HTTP method: ต้องเป็น `services/[<folder>/]<name>.<type>/iteminfo/manifest/manifest.json`
+> ไม่ใช่ `.../manifest` เฉย ๆ ยืนยันแล้วกับเอกสารทางการของ Esri
+> ([Service Manifest](https://developers.arcgis.com/rest/enterprise-administration/server/servicemanifest.htm))
 
 สิ่งที่**จงใจไม่ทำ**คือการ*สร้าง*รายงานการใช้งาน — `AGSUSAGE` อ่านได้เฉพาะรายงานที่มีอยู่แล้ว
 บนไซต์ผ่าน `/usagereports` และ `/usagereports/<ชื่อ>/data` ซึ่งเป็น `GET` ล้วน แต่จะไม่สั่งสร้าง

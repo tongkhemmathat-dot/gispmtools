@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 #  PMtools - ArcGIS.ps1
 #  Connection, authentication and REST plumbing for the ArcGIS Server
 #  Administrator API. Shared by every Checks\A*-ArcGIS*.ps1 check and by
@@ -7,7 +7,14 @@
 #  ASCII-only, same rule as every other .ps1 here - see Core.ps1.
 #
 #  READ-ONLY, deliberately. Only two verbs are used against the site:
-#    - GET  for everything that reads state.
+#    - GET  for everything that reads state, including a service's
+#      manifest resource (Checks\A5-ArcGISServiceWorkspace.ps1,
+#      AGSWORKSPACE) - an earlier version of that check used POST for
+#      manifest, going by a secondhand claim rather than Esri's own
+#      reference; that claim was wrong (confirmed against a real site,
+#      2026-08-07, and against Esri's published documentation) and cost a
+#      second fix - see that check's own header for the real bug, which
+#      was the URL path, not the HTTP method.
 #    - POST for generateToken, data/findItems, data/validateDataItem and
 #      logs/query ONLY. All four are POST because the Admin API requires
 #      it for these operations (a token, or a JSON body too large for a
@@ -17,10 +24,14 @@
 #      retests a connection the site already has stored credentials for
 #      using those credentials, and logs/query only reads the log the
 #      site already keeps - see Checks\A3-ArcGISData.ps1 (AGSDATA) and
-#      Checks\A4-ArcGISLog.ps1 (AGSLOG). AGSDATA is also careful about
-#      what it never keeps: findItems returns each item's connection
-#      string, encrypted password included, and that never leaves memory.
-#      Nothing here writes to the site.
+#      Checks\A4-ArcGISLog.ps1 (AGSLOG). AGSWORKSPACE also calls
+#      data/findItems - see its own header for why that is a name lookup,
+#      not the fuller impact analysis AGSDATA's peers used to do before
+#      that was removed by request. AGSDATA is also careful about what it
+#      never keeps: findItems returns each item's connection string,
+#      encrypted password included, and that never leaves memory -
+#      AGSWORKSPACE follows the same rule (see its own header). Nothing
+#      here writes to the site.
 #
 #  What is deliberately NOT implemented: creating a usage report. Reading
 #  one that already exists (Checks\A2-ArcGISUsage.ps1, AGSUSAGE) is a plain
@@ -610,4 +621,94 @@ function Test-PMArcGISConnection {
     }
 
     return $result
+}
+
+# ---------------------------------------------------------------------
+# Connection string parsing (used by Checks\A5-ArcGISServiceWorkspace.ps1,
+# AGSWORKSPACE)
+#   Turns "SERVER=dbsrv01;INSTANCE=sde:sqlserver:dbsrv01;...;
+#   ENCRYPTED_PASSWORD=..." into SERVER/DATABASE/USER a check can read
+#   without ever touching the password. Kept here, not duplicated in the
+#   check, so there is one parser regardless of caller.
+# ---------------------------------------------------------------------
+
+# Splits on the FIRST '=' only, so a value that itself contains '=' is not
+# truncated (not expected in these fields, but cheap to get right).
+function ConvertFrom-PMArcGISConnectionString {
+    param([Parameter(Mandatory)][string]$ConnectionString)
+
+    $parts = @{}
+    foreach ($piece in $ConnectionString -split ';') {
+        if ([string]::IsNullOrWhiteSpace($piece)) { continue }
+        $eq = $piece.IndexOf('=')
+        if ($eq -lt 1) { continue }
+        $key = $piece.Substring(0, $eq).Trim().ToUpper()
+        $val = $piece.Substring($eq + 1).Trim()
+        $parts[$key] = $val
+    }
+    return $parts
+}
+
+# SERVER is not always present - branch-versioned and some Oracle
+# connections carry the host only inside INSTANCE (e.g. "sde:oracle11g:orcl",
+# or "sde:oracle$sde:oracle11g:orcl" for a Net service name). Either way the
+# host is the LAST segment once split on ':' and '$'. A named instance
+# (dbsrv01\INST01), a port (dbsrv01,1433) and an FQDN (dbsrv01.gis.local) are
+# all stripped too - none of them changes which server the connection points at.
+function Get-PMArcGISNormalizedServer {
+    param([Parameter(Mandatory)][hashtable]$ConnectionParts)
+
+    $server = [string]$ConnectionParts['SERVER']
+    if ([string]::IsNullOrWhiteSpace($server)) {
+        $instance = [string]$ConnectionParts['INSTANCE']
+        if (-not [string]::IsNullOrWhiteSpace($instance)) {
+            $segments = @($instance -split '[:$]')
+            $server = $segments[$segments.Count - 1]
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($server)) { return '' }
+
+    $server = $server -replace '\\.*$', ''    # dbsrv01\INST01    -> dbsrv01
+    $server = ($server -split ',')[0]         # dbsrv01,1433      -> dbsrv01
+    $server = ($server -split '\.')[0]        # dbsrv01.gis.local -> dbsrv01
+    return $server.Trim().ToLower()
+}
+
+# The match key for an enterprise geodatabase connection, used only to look
+# up whether a service's workspace corresponds to a REGISTERED data store
+# (Checks\A5-ArcGISServiceWorkspace.ps1's "Matching Registered Data Store"
+# column - a name lookup, not a health check or an unregister-impact
+# analysis). VERSION is deliberately excluded - several services can
+# publish against the same database under different versions (sde.DEFAULT,
+# a branch version, a traditional version) and still share one registered
+# data store; folding VERSION into the key would miss that match.
+function Get-PMArcGISDatabaseKey {
+    param([Parameter(Mandatory)][hashtable]$ConnectionParts)
+
+    $server = Get-PMArcGISNormalizedServer -ConnectionParts $ConnectionParts
+    $db     = [string]$ConnectionParts['DATABASE']
+    $user   = [string]$ConnectionParts['USER']
+    return ('{0}|{1}|{2}' -f $server, $db, $user).ToLower()
+}
+
+# The match key for a path-based store (file share, raster store): forward
+# slashes normalised to backslashes, no trailing slash, lower-cased - so
+# "/data/gis" and "\\data\\gis\\" compare equal.
+function Get-PMArcGISPathKey {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
+    $p = $Path.Trim().Replace('/', '\').TrimEnd('\')
+    return $p.ToLower()
+}
+
+# A service's path-based workspace matches a registered store if it IS the
+# store's path, or sits somewhere underneath it - a store registered at
+# \\srv\gisdata covers a service published from \\srv\gisdata\parcels\2026.
+function Test-PMArcGISPathMatch {
+    param([string]$ServiceKey, [string]$StoreKey)
+
+    if ([string]::IsNullOrWhiteSpace($ServiceKey) -or [string]::IsNullOrWhiteSpace($StoreKey)) { return $false }
+    if ($ServiceKey -eq $StoreKey) { return $true }
+    return $ServiceKey.StartsWith($StoreKey + '\')
 }

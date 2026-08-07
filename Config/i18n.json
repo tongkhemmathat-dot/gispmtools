@@ -387,5 +387,24 @@
   "agslog.finding.warning": { "th": "เครื่อง \"{0}\" มีบันทึกระดับควรเฝ้าระวังรหัส {1} จำนวน {2} รายการ ล่าสุดเมื่อ {3}", "en": "Machine \"{0}\" logged {2} WARNING entrie(s) with code {1}, most recently at {3}." },
   "agslog.finding.queryError": { "th": "อ่านบันทึกระดับ {0} ไม่ได้ ({1}) ผลสรุปจึงอาจไม่ครบ", "en": "Could not read {0}-level log entries ({1}), so the totals may be incomplete." },
   "agslog.finding.capped":  { "th": "ดึงบันทึกมาสูงสุด {0} รายการต่อระดับความรุนแรงเพื่อความเร็ว อาจมีมากกว่านี้จริงในไซต์ ตัวเลขที่แสดงจึงเป็นค่าอย่างน้อยที่สุด ไม่ใช่จำนวนที่ครบทั้งหมด", "en": "Fetched up to {0} entrie(s) per severity level for speed. The site may hold more; the figures shown are a lower bound, not an exhaustive count." },
-  "agslog.summary.queryError": { "th": "อ่านบันทึกเหตุการณ์ของ ArcGIS Server ไม่ได้เลยในช่วง {0} วันที่ผ่านมา จึงยังสรุปไม่ได้ว่ามีปัญหาหรือไม่", "en": "Could not read ArcGIS Server logs at all for the last {0} day(s), so whether there is a problem is undetermined." }
+  "agslog.summary.queryError": { "th": "อ่านบันทึกเหตุการณ์ของ ArcGIS Server ไม่ได้เลยในช่วง {0} วันที่ผ่านมา จึงยังสรุปไม่ได้ว่ามีปัญหาหรือไม่", "en": "Could not read ArcGIS Server logs at all for the last {0} day(s), so whether there is a problem is undetermined." },
+
+  "agsworkspace.title":         { "th": "Service Workspace ของบริการแผนที่", "en": "ArcGIS Server Service Workspaces" },
+  "agsworkspace.summary.ok":    { "th": "ตรวจ workspace ของบริการ {0} รายการ อ่านได้ครบทุกรายการ", "en": "{0} service(s) checked. Workspace read successfully for all of them." },
+  "agsworkspace.summary.issue": { "th": "ตรวจ workspace ของบริการ {0} รายการ อ่าน manifest ไม่ได้ {1} รายการ", "en": "{0} service(s) checked. Could not read the manifest for {1} of them." },
+  "agsworkspace.summary.none":  { "th": "ไซต์นี้ไม่มีบริการให้ตรวจ workspace", "en": "This site has no services to check workspaces for." },
+  "agsworkspace.col.service":   { "th": "บริการ", "en": "Service" },
+  "agsworkspace.col.type":      { "th": "ประเภท", "en": "Type" },
+  "agsworkspace.col.category":  { "th": "หมวด", "en": "Category" },
+  "agsworkspace.col.server":    { "th": "เซิร์ฟเวอร์ (IP/ชื่อเครื่อง) หรือ path", "en": "Server (IP/host) or Path" },
+  "agsworkspace.col.instance":  { "th": "Instance", "en": "Instance" },
+  "agsworkspace.col.database":  { "th": "ฐานข้อมูล", "en": "Database" },
+  "agsworkspace.col.user":      { "th": "บัญชีผู้ใช้", "en": "User" },
+  "agsworkspace.col.registeredstore": { "th": "Data Store ที่ลงทะเบียนตรงกัน", "en": "Matching Registered Data Store" },
+  "agsworkspace.col.status":    { "th": "สถานะ", "en": "Status" },
+  "agsworkspace.state.ok":      { "th": "อ่านได้ปกติ", "en": "Read OK" },
+  "agsworkspace.state.unknown": { "th": "อ่าน manifest ไม่ได้", "en": "Manifest unreadable" },
+  "agsworkspace.finding.storesError": { "th": "อ่านรายการ data store ที่ลงทะเบียนไว้ไม่ได้ ({0}) คอลัมน์ \"Data Store ที่ลงทะเบียนตรงกัน\" จึงยังเทียบไม่ได้กับรายการใดเลย", "en": "Could not read the list of registered data stores ({0}). The \"Matching Registered Data Store\" column could not be compared against anything as a result." },
+  "agsworkspace.finding.folderError": { "th": "อ่านรายการบริการในโฟลเดอร์ \"{0}\" ไม่ได้ ({1}) บริการในโฟลเดอร์นี้จึงไม่ถูกนับรวม", "en": "Could not read the service list in folder \"{0}\" ({1}). Services in this folder are not included." },
+  "agsworkspace.finding.unknown": { "th": "อ่าน manifest ของบริการ \"{0}\" ไม่ได้ ({1}) จึงยังบอกไม่ได้ว่าบริการนี้ใช้ workspace ไหน", "en": "Could not read the manifest for service \"{0}\" ({1}). Which workspace it uses is undetermined." }
 }

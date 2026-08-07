@@ -10,7 +10,7 @@
     "SystemNameTh": "",
     "SystemNameEn": "",
     "PreparedBy": "",
-    "ToolVersion": "1.7.9",
+    "ToolVersion": "1.7.12",
 
     "_showRecommendations": "แสดงหัวข้อ 'ข้อเสนอแนะและสิ่งที่ควรดำเนินการ' ในรายงานหรือไม่ | ปิดไว้เพื่อให้รายงานกระชับ | ข้อเสนอแนะยังถูกคำนวณและเก็บไว้ในไฟล์ข้อมูลดิบ (.json) ครบเสมอ ไม่ว่าจะเปิดหรือปิด",
     "ShowRecommendations": false
@@ -18,8 +18,8 @@
 
   "_checksNote": "ทุกหัวข้อเป็นการอ่านค่าเท่านั้น ไม่มีการแก้ไขค่า ไม่ติดตั้งอะไร และไม่รีสตาร์ทเครื่อง",
   "Checks": {
-    "_comment": "รหัสหัวข้อที่ไม่ต้องการให้รันอัตโนมัติ | WU ต้องติดต่อ WSUS หรือ Microsoft Update ซึ่งใช้เวลานานมากและอาจค้าง | CONN เป็นหัวข้อเดียวที่ส่ง ping ออกไปจริง หากมี IPS/IDS อาจถูกมองว่าเป็นการสแกนแล้วบล็อกเครื่อง | SMBCONN เชื่อมต่อพอร์ต 445 และเปิดอ่าน UNC path ของ NAS ที่ตั้งค่าไว้จริง ต้องตั้งค่าปลายทางก่อนที่ SmbConnectivity.Targets | AGS, AGSSVC, AGSUSAGE ติดต่อ ArcGIS Server Admin API ต้องตั้งค่าการเชื่อมต่อก่อน (เมนูหลัก -> ArcGIS Server connection) | ถ้าต้องการรันเฉพาะครั้งให้สั่ง .\\Start-PMCheck.ps1 -Only CONN",
-    "Disabled": ["WU", "CONN", "SMBCONN", "AGS", "AGSSVC", "AGSUSAGE", "AGSDATA", "AGSLOG"]
+    "_comment": "รหัสหัวข้อที่ไม่ต้องการให้รันอัตโนมัติ | WU ต้องติดต่อ WSUS หรือ Microsoft Update ซึ่งใช้เวลานานมากและอาจค้าง | CONN เป็นหัวข้อเดียวที่ส่ง ping ออกไปจริง หากมี IPS/IDS อาจถูกมองว่าเป็นการสแกนแล้วบล็อกเครื่อง | SMBCONN เชื่อมต่อพอร์ต 445 และเปิดอ่าน UNC path ของ NAS ที่ตั้งค่าไว้จริง ต้องตั้งค่าปลายทางก่อนที่ SmbConnectivity.Targets | AGS, AGSSVC, AGSUSAGE, AGSDATA, AGSLOG, AGSWORKSPACE ติดต่อ ArcGIS Server Admin API ต้องตั้งค่าการเชื่อมต่อก่อน (เมนูหลัก -> ArcGIS Server connection) | ถ้าต้องการรันเฉพาะครั้งให้สั่ง .\\Start-PMCheck.ps1 -Only CONN",
+    "Disabled": ["WU", "CONN", "SMBCONN", "AGS", "AGSSVC", "AGSUSAGE", "AGSDATA", "AGSLOG", "AGSWORKSPACE"]
   },
 
   "ArcGIS": {

@@ -41,7 +41,7 @@ Initialize-PMCore -ConfigDir $ConfigDir
 $defaultMinutes = [int](Get-PMSetting -Path 'Monitor.DefaultMinutes'  -Default 30)
 $interval       = [int](Get-PMSetting -Path 'Monitor.IntervalSeconds' -Default 10)
 $maxAgeHours    = [double](Get-PMSetting -Path 'Monitor.MaxDataAgeHours' -Default 24)
-$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.9')
+$toolVersion    = [string](Get-PMSetting -Path 'Report.ToolVersion' -Default '1.7.12')
 
 function Write-PMRule { Write-Host ('=' * 62) -ForegroundColor DarkGray }
 
@@ -464,6 +464,22 @@ function Show-PMArcGISMenu {
     }
 }
 
+# Shared by both ArcGIS entries on the "what to check" screen below. Offers
+# to set a connection up on the spot rather than just refusing, since a
+# first-time operator landing on either entry has nowhere else obvious to go.
+function Confirm-PMArcGISConnectionReady {
+    $conn = $null
+    try { $conn = Get-PMArcGISConnection } catch { $conn = $null }
+    if ($null -ne $conn) { return $true }
+
+    Write-Host ''
+    Write-Host '  No ArcGIS Server connection is configured yet - set one up first.' -ForegroundColor Yellow
+    Write-Host ''
+    Read-Host '  Press Enter to continue' | Out-Null
+    Show-PMArcGISMenu
+    return $false
+}
+
 # ---------------------------------------------------------------------
 # NAS / SMB connectivity testing
 #   Two different jobs live under one menu entry: running the *configured*
@@ -835,10 +851,12 @@ while (-not $ready) {
         Write-Host '  What do you want to check?'
         Write-Host ''
         Write-PMMenuOption -Key '1' -Text 'Server - the regular maintenance checks' -Default
-        Write-PMMenuOption -Key '2' -Text 'ArcGIS Server - site, services, usage reports  ' -NoNewline
+        Write-PMMenuOption -Key '2' -Text 'ArcGIS Server - site, services, usage reports   ' -NoNewline
+        Write-Host $agsHint -ForegroundColor DarkGray
+        Write-PMMenuOption -Key '3' -Text 'ArcGIS Server - service & database connection   ' -NoNewline
         Write-Host $agsHint -ForegroundColor DarkGray
         Write-Host ''
-        Write-PMMenuOption -Key '3' -Text 'Test NAS / SMB connectivity                     ' -NoNewline
+        Write-PMMenuOption -Key '4' -Text 'Test NAS / SMB connectivity                     ' -NoNewline
         Write-Host $smbHint -ForegroundColor DarkGray
         Write-Host ''
         Write-PMMenuOption -Key 'A' -Text 'ArcGIS Server connection...'
@@ -851,21 +869,9 @@ while (-not $ready) {
 
         switch ($modeChoice.Trim().ToUpper()) {
             '1' { $mode = 'Server' }
-            '2' {
-                $conn = $null
-                try { $conn = Get-PMArcGISConnection } catch { $conn = $null }
-                if ($null -eq $conn) {
-                    Write-Host ''
-                    Write-Host '  No ArcGIS Server connection is configured yet - set one up first.' -ForegroundColor Yellow
-                    Write-Host ''
-                    Read-Host '  Press Enter to continue' | Out-Null
-                    Show-PMArcGISMenu
-                }
-                else {
-                    $mode = 'ArcGIS'
-                }
-            }
-            '3' { Show-PMNasTestMenu }
+            '2' { if (Confirm-PMArcGISConnectionReady) { $mode = 'ArcGIS' } }
+            '3' { if (Confirm-PMArcGISConnectionReady) { $mode = 'ArcGISDataConn' } }
+            '4' { Show-PMNasTestMenu }
             'A' { Show-PMArcGISMenu }
             'Q' { Write-Host ''; Write-Host '  Cancelled.'; Write-Host ''; exit 0 }
             default {
@@ -876,7 +882,7 @@ while (-not $ready) {
         }
     }
 
-    if ($mode -eq 'ArcGIS') { $ready = $true; continue }
+    if ($mode -eq 'ArcGIS' -or $mode -eq 'ArcGISDataConn') { $ready = $true; continue }
 
     # --- Server mode: how long to sample first -------------------------------
     # $chosen drives the loop rather than break/continue inside the switch.
@@ -965,7 +971,19 @@ if ($mode -eq 'Server') {
     exit $LASTEXITCODE
 }
 
-# ArcGIS mode: no sampling question, nothing to trend - just run the three
-# ArcGIS checks against the connection confirmed to exist above.
+if ($mode -eq 'ArcGISDataConn') {
+    # Service & database connection only: AGSSVC (map service status),
+    # AGSDATA (can each registered data store still connect) and
+    # AGSWORKSPACE (what workspace - server/database or path - each
+    # service actually connects to, Referenced/Replaced/Copied) - not
+    # AGS/AGSUSAGE/AGSLOG, so -Only is used instead of -Group ArcGIS. An
+    # explicit -Only already bypasses Checks.Disabled the same way -Group
+    # does (see Start-PMCheck.ps1).
+    & (Join-Path $PMRoot 'Start-PMCheck.ps1') -Only 'AGSSVC,AGSDATA,AGSWORKSPACE' -OutputRoot $OutputRoot -ConfigDir $ConfigDir -OpenReport
+    exit $LASTEXITCODE
+}
+
+# ArcGIS mode: no sampling question, nothing to trend - just run every
+# ArcGIS check against the connection confirmed to exist above.
 & (Join-Path $PMRoot 'Start-PMCheck.ps1') -Group ArcGIS -OutputRoot $OutputRoot -ConfigDir $ConfigDir -OpenReport
 exit $LASTEXITCODE
