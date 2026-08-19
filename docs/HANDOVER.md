@@ -1,6 +1,6 @@
-﻿# บันทึกส่งงาน PMtools — ทำต่อหลังวันที่ 7 สิงหาคม 2569
+﻿# บันทึกส่งงาน PMtools — ทำต่อหลังวันที่ 19 สิงหาคม 2569
 
-สรุป ณ วันที่ 7 สิงหาคม 2569 (อัปเดตหลังออก v1.7.12) สำหรับใช้ทำงานต่อ
+สรุป ณ วันที่ 19 สิงหาคม 2569 (อัปเดตหลังออก v1.7.13) สำหรับใช้ทำงานต่อ
 
 ไฟล์นี้เก็บ **สถานะงานและสิ่งที่ค้าง** ส่วนวิธีใช้งานอยู่ใน [README.md](../README.md)
 และเอกสารที่ README.md ชี้ไปต่อ (ทั้งหมดอยู่ในโฟลเดอร์นี้ `docs/`: USAGE.md, DISTRIBUTION.md,
@@ -14,7 +14,7 @@ CHECKS.md, TECHNICAL.md)
 
 เครื่องมืออยู่ที่ `D:\PMtools` ขึ้น GitHub แล้วที่
 [tongkhemmathat-dot/gispmtools](https://github.com/tongkhemmathat-dot/gispmtools) (private)
-**รุ่นล่าสุดที่ออกคือ v1.7.12**
+**push ครบทุก commit แล้ว ไม่มีอะไรค้างใน working tree — รุ่นล่าสุดที่ออกคือ v1.7.13**
 
 มี **24 หัวข้อตรวจ** โดย 15 หัวข้อรันเป็นค่าเริ่มต้น ใช้เวลาราว 7-8 วินาที
 อีก 9 หัวข้อปิดไว้ (`WU`, `CONN`, `SMBCONN`, `AGS`, `AGSSVC`, `AGSUSAGE`, `AGSDATA`, `AGSLOG`, `AGSWORKSPACE`)
@@ -965,8 +965,26 @@ SMBCONN -OpenReport` เหมือนเดิม ผลไปอยู่ใ�
 (ทดสอบตรง ๆ นอกเมนู) - path การพิมพ์ "Authentication FAILED" ในเมนูเองยังไม่เคยเห็นรันจริงเพราะเทสต์อัตโนมัติ
 ไปไม่ถึง ต้องลองที่ console จริงเพื่อยืนยันรอบแรกที่ใช้งาน
 
+### `v1.7.13` — ปลอม User-Agent ให้ทุกคำขอ ArcGIS เป็นเบราว์เซอร์ธรรมดา
+
+ผู้ใช้รายงานว่าบางไซต์ (มักเป็นหน่วยงานรัฐ/องค์กรที่มี WAF/reverse proxy หน้า Portal) เชื่อมต่อ ArcGIS
+ไม่ได้เลย ขึ้น error เป็น HTTP 403 เปล่า ๆ ไม่มี error body แบบ ArcGIS ให้ดูสาเหตุ ทั้งที่เปิด URL เดียวกัน
+ผ่านเบราว์เซอร์ปกติได้สบาย สาเหตุคือ `Invoke-RestMethod` ของ Windows PowerShell ส่ง header
+`User-Agent` ที่มีคำว่า `PowerShell` ติดไปด้วยเสมอ (เช่น `...PowerShell/5.1...`) ซึ่ง WAF ประเภทนี้มักตั้ง
+ค่าเริ่มต้นให้บล็อก request ที่มี user-agent แบบ scripted/non-browser - request จึงไปไม่ถึง Portal ด้วยซ้ำ
+
+แก้โดยเพิ่ม `$Script:PMArcGISUserAgent` ใน `Lib\ArcGIS.ps1` (ค่าเป็น user-agent string ของ Chrome
+บน Windows ธรรมดา) แล้วส่ง `-UserAgent $Script:PMArcGISUserAgent` ต่อท้ายทุกจุดที่เรียก
+`Invoke-RestMethod` เกี่ยวกับ ArcGIS: ขอ token, verify token ผ่าน `/community/self`, และ
+`Invoke-PMArcGISAdmin` ทั้งสองแบบ (`Post`/`Get`) - ครบทุกจุดที่เคยไม่ได้ส่ง user-agent มาก่อน
+
+**ยังไม่ได้ทดสอบกับไซต์จริงที่เจออาการนี้** (ไซต์ที่ยืนยัน ArcGIS ไปแล้วก่อนหน้าไม่ได้ติด WAF แบบนี้) ต้องรอ
+ผู้ใช้ลองกับไซต์ที่รายงานปัญหามาก่อนถึงจะรู้ว่าแก้ตรงจุดจริงหรือไม่
+
 ### ยังไม่ได้ยืนยัน
 
+- **User-Agent ปลอมแก้ปัญหา WAF บล็อกได้จริงหรือไม่ (v1.7.13)** — ยังไม่เคยรันกับไซต์ที่เจออาการ
+  HTTP 403 เปล่า ๆ ตามที่ผู้ใช้รายงาน มีแต่การอ่านโค้ด/เหตุผลเชิงทฤษฎีเท่านั้น
 - **`SMBCONN` กับ NAS จริง** — ทดสอบแค่ localhost (`\\localhost\C$` เข้าถึงได้จริง) กับ IP ที่ไม่มีเครื่องตอบ
   (unreachable, WARN) และ localhost กับชื่อ share ที่ไม่มีอยู่ (port ผ่านแต่ share เข้าถึงไม่ได้, WARN)
   ยังไม่เคยรันกับ NAS ต่างเครื่องจริงบนเครือข่าย ยังไม่รู้ latency ทั่วไปหรือพฤติกรรมกับ auth ที่ต้องใช้

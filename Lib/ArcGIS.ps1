@@ -311,6 +311,16 @@ $Script:PMArcGISTokenKey    = ''
 # always sends it, harmless for server-tier tokens which do not check it.
 $Script:PMArcGISReferer = 'https://pmtools.local'
 
+# Windows PowerShell's Invoke-RestMethod sends a User-Agent that literally
+# contains "PowerShell" (e.g. "...PowerShell/5.1..."), which WAFs and
+# reverse proxies in front of government/enterprise Portal sites commonly
+# block by default while a plain browser hitting the same URL sails
+# through - the request never even reaches Portal, so the failure surfaces
+# as a bare HTTP 403 with no ArcGIS error body to explain it. Presenting as
+# an ordinary browser sidesteps that whole class of false "connection
+# failed" result.
+$Script:PMArcGISUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
 function Clear-PMArcGISToken {
     $Script:PMArcGISToken       = $null
     $Script:PMArcGISTokenExpiry = [datetime]::MinValue
@@ -386,7 +396,7 @@ function Get-PMArcGISToken {
     }
 
     try {
-        $resp = Invoke-RestMethod -Uri $url -Method Post -Body $body -TimeoutSec $TimeoutSec -ErrorAction Stop
+        $resp = Invoke-RestMethod -Uri $url -Method Post -Body $body -UserAgent $Script:PMArcGISUserAgent -TimeoutSec $TimeoutSec -ErrorAction Stop
     }
     catch {
         throw ("Could not reach {0}: {1}" -f $url, $_.Exception.Message)
@@ -426,7 +436,7 @@ function Get-PMArcGISToken {
         $selfUrl = (Get-PMArcGISPortalRoot -Url $PortalUrl) + '/sharing/rest/community/self'
         try {
             $self = Invoke-RestMethod -Uri $selfUrl -Method Get -Body @{ f = 'json'; token = $newToken } `
-                                      -Headers @{ Referer = $Script:PMArcGISReferer } -TimeoutSec $TimeoutSec -ErrorAction Stop
+                                      -Headers @{ Referer = $Script:PMArcGISReferer } -UserAgent $Script:PMArcGISUserAgent -TimeoutSec $TimeoutSec -ErrorAction Stop
         }
         catch {
             throw ("Portal for ArcGIS issued a token but it could not be verified: {0}" -f $_.Exception.Message)
@@ -492,13 +502,13 @@ function Invoke-PMArcGISAdmin {
 
     try {
         if ($Method -eq 'Post') {
-            $resp = Invoke-RestMethod -Uri $url -Method Post -Body $reqArgs -Headers $headers -TimeoutSec $TimeoutSec -ErrorAction Stop
+            $resp = Invoke-RestMethod -Uri $url -Method Post -Body $reqArgs -Headers $headers -UserAgent $Script:PMArcGISUserAgent -TimeoutSec $TimeoutSec -ErrorAction Stop
         }
         else {
             $query = ($reqArgs.GetEnumerator() | ForEach-Object {
                 '{0}={1}' -f [Uri]::EscapeDataString([string]$_.Key), [Uri]::EscapeDataString([string]$_.Value)
             }) -join '&'
-            $resp = Invoke-RestMethod -Uri ($url + '?' + $query) -Method Get -Headers $headers -TimeoutSec $TimeoutSec -ErrorAction Stop
+            $resp = Invoke-RestMethod -Uri ($url + '?' + $query) -Method Get -Headers $headers -UserAgent $Script:PMArcGISUserAgent -TimeoutSec $TimeoutSec -ErrorAction Stop
         }
     }
     catch {
